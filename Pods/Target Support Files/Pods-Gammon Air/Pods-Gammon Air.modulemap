@@ -1,0 +1,6 @@
+framework module Pods_Gammon_Air {
+  umbrella header "Pods-Gammon Air-umbrella.h"
+
+  export *
+  module * { export * }
+}
