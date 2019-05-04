@@ -15,6 +15,7 @@
 		4C70DF902278F46B004C113E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4C70DF8F2278F46B004C113E /* GoogleService-Info.plist */; };
 		4C70DF9222791AC5004C113E /* JoinTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C70DF9122791AC5004C113E /* JoinTableViewCell.swift */; };
 		4C70DF94227924E8004C113E /* BoardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C70DF93227924E8004C113E /* BoardViewController.swift */; };
+		4C7CD7C5227CDB6C00FC06C4 /* scnModels.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C7CD7C4227CDB6C00FC06C4 /* scnModels.scnassets */; };
 		F562B5E4552E0302B64637D9 /* Pods_Gammon_Air.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9BAA15EB5491F71EAEF763DF /* Pods_Gammon_Air.framework */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +30,7 @@
 		4C70DF8F2278F46B004C113E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4C70DF9122791AC5004C113E /* JoinTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinTableViewCell.swift; sourceTree = "<group>"; };
 		4C70DF93227924E8004C113E /* BoardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewController.swift; sourceTree = "<group>"; };
+		4C7CD7C4227CDB6C00FC06C4 /* scnModels.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = scnModels.scnassets; sourceTree = "<group>"; };
 		90319DB8BD300CD9D4051E66 /* Pods-Gammon Air.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Gammon Air.release.xcconfig"; path = "Target Support Files/Pods-Gammon Air/Pods-Gammon Air.release.xcconfig"; sourceTree = "<group>"; };
 		9BAA15EB5491F71EAEF763DF /* Pods_Gammon_Air.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Gammon_Air.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE15D4B46D05BEC64F1B79FB /* Pods-Gammon Air.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Gammon Air.debug.xcconfig"; path = "Target Support Files/Pods-Gammon Air/Pods-Gammon Air.debug.xcconfig"; sourceTree = "<group>"; };
@@ -87,6 +89,7 @@
 				4C336DCE2278C067005F5F6C /* AppDelegate.swift */,
 				4C336DD02278C067005F5F6C /* ViewController.swift */,
 				4C70DF93227924E8004C113E /* BoardViewController.swift */,
+				4C7CD7C4227CDB6C00FC06C4 /* scnModels.scnassets */,
 				4C336DD22278C067005F5F6C /* Main.storyboard */,
 				4C70DF9122791AC5004C113E /* JoinTableViewCell.swift */,
 				4C336DD52278C069005F5F6C /* Assets.xcassets */,
@@ -160,6 +163,7 @@
 				4C336DD92278C069005F5F6C /* LaunchScreen.storyboard in Resources */,
 				4C70DF902278F46B004C113E /* GoogleService-Info.plist in Resources */,
 				4C336DD62278C069005F5F6C /* Assets.xcassets in Resources */,
+				4C7CD7C5227CDB6C00FC06C4 /* scnModels.scnassets in Resources */,
 				4C336DD42278C067005F5F6C /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
