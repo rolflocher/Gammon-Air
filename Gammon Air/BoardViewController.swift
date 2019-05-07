@@ -36,6 +36,9 @@ class BoardViewController: UIViewController {
     var settingRoll = false
     var usedMoves = [[Int]]()
     
+    var whiteRail = [Int]()
+    var blackRail = [Int]()
+    
     var boardArray = [[Int]]()
     @IBOutlet var sceneView: SCNView!
     
@@ -50,6 +53,7 @@ class BoardViewController: UIViewController {
     var db : Firestore? = nil
     var ref : ListenerRegistration?
     var ref1 : ListenerRegistration?
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -83,7 +87,29 @@ class BoardViewController: UIViewController {
         returnButton.isUserInteractionEnabled = true
     }
     
+    
+    func addToRail (node : SCNNode, index : Int, color : String) {
+        
+        var wSep = Double()
+        var position = SCNVector3()
+        if color == "white" {
+            self.whiteRail.append(self.boardArray[index].removeLast())
+            wSep = 2.0
+            position = SCNVector3(wSep*Double(self.whiteRail.count), 0.5, 0.3)
+        }
+        else {
+            self.blackRail.append(self.boardArray[index].removeLast())
+            wSep = 2.0
+            position = SCNVector3(wSep*Double(self.blackRail.count), 0.5, 0.3)
+        }
+        print("addToRail position: \(position)")
+        let actionMove1 = SCNAction.move(to: position, duration: 0.3)
+        node.runAction(actionMove1)
+    }
+    
+    
     func afterRoll () {
+        
         ref1 = db?.collection("games").document(gameID).addSnapshotListener({ (snapshot, error) in
             if snapshot?.data()?["turn"] == nil {
                 return
@@ -91,6 +117,16 @@ class BoardViewController: UIViewController {
             
             if self.settingRoll {
                 self.settingRoll = false
+                return
+            }
+            
+            let dice0or = snapshot?.data()?["dice0or"] as! [Double]
+            let dice1or = snapshot?.data()?["dice1or"] as! [Double]
+            if snapshot?.data()?["turn"] as! String != self.color && dice0or.count != 1 {
+                self.mainScene.rootNode.childNodes[32].position = self.mainScene.rootNode.childNodes[32].presentation.position
+                self.mainScene.rootNode.childNodes[33].position = self.mainScene.rootNode.childNodes[33].presentation.position
+                self.mainScene.rootNode.childNodes[32].eulerAngles = SCNVector3(dice0or[0], dice0or[1], dice0or[2])
+                self.mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(dice1or[0], dice1or[1], dice1or[2])
                 return
             }
             
@@ -103,121 +139,524 @@ class BoardViewController: UIViewController {
             else if snapshot?.data()?["turn"] as! String != self.color {
                 return
             }
-            //let 😤 = [5]
-            //print(😤.first(where: {$0 == 4}))
             
             if snapshot?.data()?["isFirst"] != nil {
-                let force = SCNVector3(x: self.color == "white" ? 12 : -12, y: 2 , z: Float.random(in: -0.5..<0.5))
-                let position = SCNVector3(x: Float.random(in: -0.5..<0.5), y: Float.random(in: -0.5..<0.5), z: Float.random(in: -0.5..<0.5))
-                let force0 = SCNVector3(x: self.color == "white" ? 12 : -12, y: 2 , z: Float.random(in: -0.5..<0.5))
-                let position0 = SCNVector3(x: Float.random(in: -0.5..<0.5), y: Float.random(in: -0.5..<0.5), z: Float.random(in: -0.5..<0.5))
-                self.db?.collection("games").document(self.gameID).setData([
-                    "dice0" : [force.x, force.y, force.z, position.x, position.y, position.z],
-                    "dice1" : [force0.x, force0.y, force0.z, position0.x, position0.y, position0.z],
-                    ], merge: true)
-                self.settingRoll = true
-                self.throwDice(initial: false, spectating: false, dice0Ballistics: [force, position], dice1Ballistics: [force0, position0])
-                DispatchQueue.main.asyncAfter(deadline: .now()+6, execute: {
-                    self.roll = self.getDice()
-                    self.debugLabel.text = String(self.roll[0]) + String(self.roll[1])
-                    self.moves = [[Int]]()
-                    self.usedMoves = [[Int]]()
-                    if self.color == "white" {
-                        for x in 0..<self.boardArray.count {
-                            if self.boardArray[x].contains(where: {$0 < 16}){
-                                if x+self.roll[0] < self.boardArray.count {
-                                    if self.boardArray[x+self.roll[0]].contains(where: {$0 < 16}) || self.boardArray[x+self.roll[0]].count <= 1 {
-                                        self.moves.append([x, x+self.roll[0]])
-                                    }
+                let move0 = snapshot?.data()?["move0"] as! [Int]
+                let move1 = snapshot?.data()?["move1"] as! [Int]
+                let move2 = snapshot?.data()?["move2"] as! [Int]
+                let move3 = snapshot?.data()?["move3"] as! [Int]
+                var delay = 0.0
+                
+                let sep : Double = 1.82
+                
+                if move0.count != 1 {
+                    delay += 1.5
+                    var position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].presentation.position
+                    if move0[0] == -1 {
+                        position00 = self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].presentation.position
+                        let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                        self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                        self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
+                        let name = self.whiteRail.last!
+                        var xPos = Double()
+                        if move0[1] < 12 {
+                            xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                        }
+                        else {
+                            xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                        }
+                        if self.color == "white" {
+                            if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
+                                if move0[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move0[1]].count-1))
                                 }
-                                if x+self.roll[1] < self.boardArray.count {
-                                    if self.boardArray[x+self.roll[1]].contains(where: {$0 < 16}) ||  self.boardArray[x+self.roll[1]].count <= 1{
-                                        self.moves.append([x, x+self.roll[1]])
-                                    }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move0[1]].count-1))
                                 }
                             }
                         }
-                        if self.moves.count == 0 {
-//                            if self.usedMoves.count == 0 {
-                            self.db?.collection("games").document(self.gameID).setData([
-                                "turn" : self.notMyColor,
-                                "isFirst" : false,
-                                "move0" : [0],
-                                "move1" : [0]
-                                ], merge: true)
-//                            }
-//                            else if self.usedMoves.count == 2 {
-//                                self.db?.collection("games").document(self.gameID).setData([
-//                                    "turn" : self.notMyColor,
-//                                    "isFirst" : false,
-//                                    "move0" : self.usedMoves[0],
-//                                    "move1" : [0]
-//                                    ], merge: true)
-//                            }
-//                            else {
-//                                self.db?.collection("games").document(self.gameID).setData([
-//                                    "turn" : self.notMyColor,
-//                                    "isFirst" : false,
-//                                    "move0" : self.usedMoves[0],
-//                                    "move1" : self.usedMoves[1]
-//                                    ], merge: true)
-//                            }
-                            
-                        }
                         else {
-                            self.canMove = true
+                            if self.boardArray[move0[1]].contains(where: {$0 > 15}) {
+                                if move0[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move0[1]].count-1))
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move0[1]].count-1))
+                                }
+                            }
                         }
-                        print(self.moves)
+                        DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                            //print("dice0 new pos: \(SCNVector3(xPos, 4, self.position[move0[1]]))")
+                            let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move0[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove0)
+                            
+                        })
+                        DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                            //self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                            
+                            if self.color == "white" {
+                                if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move0[1]].last!], index: move0[1], color: "white")
+                                }
+                            }
+                            else {
+                                if self.boardArray[move0[1]].contains(where: {$0 > 15}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move0[1]].last!], index: move0[1], color: "black")
+                                }
+                            }
+                            
+                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move0[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
+                            self.boardArray[move0[1]].append(name)
+                            self.whiteRail.removeLast()
+                        })
+                    }
+                    else if move0[0] == 24 {
+                        
                     }
                     else {
-                        for x in 0..<self.boardArray.count {
-                            
-                            if self.boardArray[x].contains(where: {$0 > 15}){
-                                if x-self.roll[0] >= 0 {
-                                    if self.boardArray[x-self.roll[0]].contains(where: {$0 > 15}) || self.boardArray[x-self.roll[0]].count <= 1 {
-                                        self.moves.append([x, x-self.roll[0]])
-                                    }
+                        let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove)
+                        let name = self.boardArray[move0[0]].last!
+                        var xPos = Double()
+                        if move0[1] < 12 {
+                            xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                        }
+                        else {
+                            xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                        }
+                        if self.color == "white" {
+                            if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
+                                if move0[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move0[1]].count-1))
                                 }
-                                if x-self.roll[1] >= 0 {
-                                    if self.boardArray[x-self.roll[1]].contains(where: {$0 > 15}) ||  self.boardArray[x-self.roll[1]].count <= 1{
-                                        self.moves.append([x, x-self.roll[1]])
-                                    }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move0[1]].count-1))
                                 }
                             }
                         }
-                        if self.moves.count == 0 {
-//                            if self.usedMoves.count == 0 {
-                            self.db?.collection("games").document(self.gameID).setData([
-                                "turn" : self.notMyColor,
-                                "isFirst" : false,
-                                "move0" : [0],
-                                "move1" : [0]
-                                ], merge: true)
-//                            }
-//                            else if self.usedMoves.count == 2 {
-//                                self.db?.collection("games").document(self.gameID).setData([
-//                                    "turn" : self.notMyColor,
-//                                    "isFirst" : false,
-//                                    "move0" : self.usedMoves[0],
-//                                    "move1" : [0]
-//                                    ], merge: true)
-//                            }
-//                            else {
-//                                self.db?.collection("games").document(self.gameID).setData([
-//                                    "turn" : self.notMyColor,
-//                                    "isFirst" : false,
-//                                    "move0" : self.usedMoves[0],
-//                                    "move1" : self.usedMoves[1]
-//                                    ], merge: true)
-//                            }
+                        else {
+                            if self.boardArray[move0[1]].contains(where: {$0 > 15}) {
+                                if move0[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move0[1]].count-1))
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move0[1]].count-1))
+                                }
+                            }
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                            //print("dice0 new pos: \(SCNVector3(xPos, 4, self.position[move0[1]]))")
+                            let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move0[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove0)
                             
+                        })
+                        DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                            //self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                            
+                            if self.color == "white" {
+                                if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move0[1]].last!], index: move0[1], color: "white")
+                                }
+                            }
+                            else {
+                                if self.boardArray[move0[1]].contains(where: {$0 > 15}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move0[1]].last!], index: move0[1], color: "black")
+                                }
+                            }
+                            
+                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move0[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove1)
+                            self.boardArray[move0[1]].append(name)
+                            self.boardArray[move0[0]].removeLast()
+                        })
+                    }
+                    
+                    //print("dice0 old pos: \(position00)")
+                    
+                    
+                }
+                if move1.count != 1 {
+                    delay += 1.5
+                    DispatchQueue.main.asyncAfter(deadline: .now()+1.5, execute: {
+                        let position11 = self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].presentation.position
+                        if move0[0] == -1 {
+                            let position00 = self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].presentation.position
+                            let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
+                            let name = self.whiteRail.last!
+                            var xPos = Double()
+                            if move0[1] < 12 {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                            }
+                            if self.color == "white" {
+                                if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
+                                    if move0[1] < 12 {
+                                        xPos = (-9+sep*Double(self.boardArray[move0[1]].count-1))
+                                    }
+                                    else {
+                                        xPos = (9-sep*Double(self.boardArray[move0[1]].count-1))
+                                    }
+                                }
+                            }
+                            else {
+                                if self.boardArray[move0[1]].contains(where: {$0 > 15}) {
+                                    if move0[1] < 12 {
+                                        xPos = (-9+sep*Double(self.boardArray[move0[1]].count-1))
+                                    }
+                                    else {
+                                        xPos = (9-sep*Double(self.boardArray[move0[1]].count-1))
+                                    }
+                                }
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                //print("dice0 new pos: \(SCNVector3(xPos, 4, self.position[move0[1]]))")
+                                let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move0[1]]), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove0)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                //self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                                
+                                if self.color == "white" {
+                                    if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
+                                        self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move0[1]].last!], index: move0[1], color: "white")
+                                    }
+                                }
+                                else {
+                                    if self.boardArray[move0[1]].contains(where: {$0 > 15}) {
+                                        self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move0[1]].last!], index: move0[1], color: "black")
+                                    }
+                                }
+                                
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move0[1]]), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
+                                self.boardArray[move0[1]].append(name)
+                                self.whiteRail.removeLast()
+                            })
                         }
                         else {
-                            self.canMove = true
+                            let actionMove = SCNAction.move(to: SCNVector3(position11.x, 4, position11.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove)
+                            let name = self.boardArray[move1[0]].last!
+                            var xPos = Double()
+                            if move1[1] < 12 {
+                                xPos = (-9+sep*Double(self.boardArray[move1[1]].count))
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.boardArray[move1[1]].count))
+                            }
+                            if self.color == "white" {
+                                if self.boardArray[move1[1]].contains(where: {$0 < 16}) {
+                                    if move1[1] < 12 {
+                                        xPos = (-9+sep*Double(self.boardArray[move1[1]].count-1))
+                                    }
+                                    else {
+                                        xPos = (9-sep*Double(self.boardArray[move1[1]].count-1))
+                                    }
+                                }
+                            }
+                            else {
+                                if self.boardArray[move1[1]].contains(where: {$0 > 15}) {
+                                    if move1[1] < 12 {
+                                        xPos = (-9+sep*Double(self.boardArray[move1[1]].count-1))
+                                    }
+                                    else {
+                                        xPos = (9-sep*Double(self.boardArray[move1[1]].count-1))
+                                    }
+                                }
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                //print("dice1 new pos: \(SCNVector3(xPos, 4, self.position[move1[1]]))")
+                                let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move1[1]]), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove0)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                //self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                                if self.color == "white" {
+                                    if self.boardArray[move1[1]].contains(where: {$0 < 16}) {
+                                        self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move1[1]].last!], index: move1[1], color: "white")
+                                    }
+                                }
+                                else {
+                                    if self.boardArray[move1[1]].contains(where: {$0 > 15}) {
+                                        self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move1[1]].last!], index: move1[1], color: "black")
+                                    }
+                                }
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move1[1]]), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove1)
+                                self.boardArray[move1[1]].append(name)
+                                self.boardArray[move1[0]].removeLast()
+                            })
                         }
-                        print(self.moves)
-                    }
+                        
+                        
+                    })
+                }
+                if move2.count != 1 {
+                    delay += 1.5
+                    DispatchQueue.main.asyncAfter(deadline: .now()+3, execute: {
+                        let position11 = self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].presentation.position
+                        //print("dice1 old pos: \(position11)")
+                        let actionMove = SCNAction.move(to: SCNVector3(position11.x, 4, position11.z), duration: 0.3)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionMove)
+                        let name = self.boardArray[move2[0]].last!
+                        var xPos = Double()
+                        if move2[1] < 12 {
+                            xPos = (-9+sep*Double(self.boardArray[move2[1]].count))
+                        }
+                        else {
+                            xPos = (9-sep*Double(self.boardArray[move2[1]].count))
+                        }
+                        if self.color == "white" {
+                            if self.boardArray[move2[1]].contains(where: {$0 < 16}) {
+                                if move2[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-1))
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-1))
+                                }
+                            }
+                        }
+                        else {
+                            if self.boardArray[move2[1]].contains(where: {$0 > 15}) {
+                                if move2[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-1))
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-1))
+                                }
+                            }
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                            //print("dice1 new pos: \(SCNVector3(xPos, 4, self.position[move2[1]]))")
+                            let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move2[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionMove0)
+                            
+                        })
+                        DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                            //self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                            if self.color == "white" {
+                                if self.boardArray[move2[1]].contains(where: {$0 < 16}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move2[1]].last!], index: move2[1], color: "white")
+                                }
+                            }
+                            else {
+                                if self.boardArray[move2[1]].contains(where: {$0 > 15}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move2[1]].last!], index: move2[1], color: "black")
+                                }
+                            }
+                            let actionmove2 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move2[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionmove2)
+                            self.boardArray[move2[1]].append(name)
+                            self.boardArray[move2[0]].removeLast()
+                        })
+                        
+                    })
+                }
+                if move3.count != 1 {
+                    delay += 1.5
+                    DispatchQueue.main.asyncAfter(deadline: .now()+4.5, execute: {
+                        let position11 = self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].presentation.position
+                        //print("dice1 old pos: \(position11)")
+                        let actionMove = SCNAction.move(to: SCNVector3(position11.x, 4, position11.z), duration: 0.3)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionMove)
+                        let name = self.boardArray[move3[0]].last!
+                        var xPos = Double()
+                        if move3[1] < 12 {
+                            xPos = (-9+sep*Double(self.boardArray[move3[1]].count))
+                        }
+                        else {
+                            xPos = (9-sep*Double(self.boardArray[move3[1]].count))
+                        }
+                        if self.color == "white" {
+                            if self.boardArray[move3[1]].contains(where: {$0 < 16}) {
+                                if move3[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-1))
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-1))
+                                }
+                            }
+                        }
+                        else {
+                            if self.boardArray[move3[1]].contains(where: {$0 > 15}) {
+                                if move3[1] < 12 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-1))
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-1))
+                                }
+                            }
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                            //print("dice1 new pos: \(SCNVector3(xPos, 4, self.position[move3[1]]))")
+                            let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move3[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionMove0)
+                            
+                        })
+                        DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                            //self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                            if self.color == "white" {
+                                if self.boardArray[move3[1]].contains(where: {$0 < 16}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move3[1]].last!], index: move3[1], color: "white")
+                                }
+                            }
+                            else {
+                                if self.boardArray[move3[1]].contains(where: {$0 > 15}) {
+                                    self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move3[1]].last!], index: move3[1], color: "black")
+                                }
+                            }
+                            let actionmove3 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move3[1]]), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionmove3)
+                            self.boardArray[move3[1]].append(name)
+                            self.boardArray[move3[0]].removeLast()
+                        })
+                        
+                    })
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now()+delay, execute: {
+                    let force = SCNVector3(x: self.color == "white" ? 12 : -12, y: 2 , z: Float.random(in: -0.5..<0))
+                    let position = SCNVector3(x: Float.random(in: -0.5..<0.5), y: Float.random(in: -0.5..<0.5), z: Float.random(in: -0.5..<0.5))
+                    let force0 = SCNVector3(x: self.color == "white" ? 12 : -12, y: 2 , z: Float.random(in: 0..<0.5))
+                    let position0 = SCNVector3(x: Float.random(in: -0.5..<0.5), y: Float.random(in: -0.5..<0.5), z: Float.random(in: -0.5..<0.5))
+                    self.db?.collection("games").document(self.gameID).setData([
+                        "dice0" : [force.x, force.y, force.z, position.x, position.y, position.z],
+                        "dice1" : [force0.x, force0.y, force0.z, position0.x, position0.y, position0.z],
+                        ], merge: true)
+                    self.settingRoll = true
+                    self.throwDice(initial: false, spectating: false, dice0Ballistics: [force, position], dice1Ballistics: [force0, position0])
+                    DispatchQueue.main.asyncAfter(deadline: .now()+6, execute: {
+                        self.roll = self.getDice()
+                        let angles = self.mainScene.rootNode.childNodes[32].presentation.eulerAngles
+                        let angles0 = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
+                        self.settingRoll = true
+                        self.db?.collection("games").document(self.gameID).setData([
+                            "dice0or" : [angles.x, angles.y, angles.z],
+                            "dice1or" : [angles0.x, angles0.y, angles0.z],
+                            ], merge: true)
+                        self.debugLabel.text = String(self.roll[0]) + String(self.roll[1])
+                        self.moves = [[Int]]()
+                        self.usedMoves = [[Int]]()
+                        if self.color == "white" {
+                            for x in 0..<self.boardArray.count {
+                                if self.boardArray[x].contains(where: {$0 < 16}){
+                                    if x+self.roll[0] < self.boardArray.count {
+                                        if self.boardArray[x+self.roll[0]].contains(where: {$0 < 16}) || self.boardArray[x+self.roll[0]].count <= 1 {
+                                            self.moves.append([x, x+self.roll[0]])
+                                        }
+                                    }
+                                    if x+self.roll[1] < self.boardArray.count {
+                                        if self.boardArray[x+self.roll[1]].contains(where: {$0 < 16}) ||  self.boardArray[x+self.roll[1]].count <= 1{
+                                            self.moves.append([x, x+self.roll[1]])
+                                        }
+                                    }
+                                }
+                            }
+                            if self.moves.count == 0 {
+                                //                            if self.usedMoves.count == 0 {
+                                self.settingRoll = true
+                                self.db?.collection("games").document(self.gameID).setData([
+                                    "turn" : self.notMyColor,
+                                    "isFirst" : false,
+                                    "move0" : [0],
+                                    "move1" : [0],
+                                    "move2" : [0],
+                                    "move3" : [0],
+                                    "dice0or" : [0],
+                                    "dice1or" : [0],
+                                    ], merge: true)
+                                //                            }
+                                //                            else if self.usedMoves.count == 2 {
+                                //                                self.db?.collection("games").document(self.gameID).setData([
+                                //                                    "turn" : self.notMyColor,
+                                //                                    "isFirst" : false,
+                                //                                    "move0" : self.usedMoves[0],
+                                //                                    "move1" : [0]
+                                //                                    ], merge: true)
+                                //                            }
+                                //                            else {
+                                //                                self.db?.collection("games").document(self.gameID).setData([
+                                //                                    "turn" : self.notMyColor,
+                                //                                    "isFirst" : false,
+                                //                                    "move0" : self.usedMoves[0],
+                                //                                    "move1" : self.usedMoves[1]
+                                //                                    ], merge: true)
+                                //                            }
+                                
+                            }
+                            else {
+                                self.canMove = true
+                            }
+                            print(self.moves)
+                        }
+                        else {
+                            for x in 0..<self.boardArray.count {
+                                
+                                if self.boardArray[x].contains(where: {$0 > 15}){
+                                    if x-self.roll[0] >= 0 {
+                                        if self.boardArray[x-self.roll[0]].contains(where: {$0 > 15}) || self.boardArray[x-self.roll[0]].count <= 1 {
+                                            self.moves.append([x, x-self.roll[0]])
+                                        }
+                                    }
+                                    if x-self.roll[1] >= 0 {
+                                        if self.boardArray[x-self.roll[1]].contains(where: {$0 > 15}) ||  self.boardArray[x-self.roll[1]].count <= 1{
+                                            self.moves.append([x, x-self.roll[1]])
+                                        }
+                                    }
+                                }
+                            }
+                            if self.moves.count == 0 {
+                                //                            if self.usedMoves.count == 0 {
+                                self.settingRoll = true
+                                self.db?.collection("games").document(self.gameID).setData([
+                                    "turn" : self.notMyColor,
+                                    "isFirst" : false,
+                                    "move0" : [0],
+                                    "move1" : [0],
+                                    "move2" : [0],
+                                    "move3" : [0],
+                                    "dice0or" : [0],
+                                    "dice1or" : [0],
+                                    ], merge: true)
+                                //                            }
+                                //                            else if self.usedMoves.count == 2 {
+                                //                                self.db?.collection("games").document(self.gameID).setData([
+                                //                                    "turn" : self.notMyColor,
+                                //                                    "isFirst" : false,
+                                //                                    "move0" : self.usedMoves[0],
+                                //                                    "move1" : [0]
+                                //                                    ], merge: true)
+                                //                            }
+                                //                            else {
+                                //                                self.db?.collection("games").document(self.gameID).setData([
+                                //                                    "turn" : self.notMyColor,
+                                //                                    "isFirst" : false,
+                                //                                    "move0" : self.usedMoves[0],
+                                //                                    "move1" : self.usedMoves[1]
+                                //                                    ], merge: true)
+                                //                            }
+                                
+                            }
+                            else {
+                                self.canMove = true
+                            }
+                            print(self.moves)
+                        }
+                    })
                 })
+                
+                
             }
             else {
                 self.moves = [[Int]]()
@@ -264,18 +703,22 @@ class BoardViewController: UIViewController {
     }
     
     @objc func handleTap ( rec: UITapGestureRecognizer) {
+        
         if !canMove {
             return
         }
         
         let location: CGPoint = rec.location(in: sceneView)
         let hits = self.sceneView.hitTest(location, options: nil)
-        
+        if hits.count == 0 {
+            return
+        }
+        //print(hits.first!.worldCoordinates)
         if holdingPiece != nil {
-            let position0 = hits.first!.worldCoordinates
+            let position0 = hits.last!.worldCoordinates
             if rec.state == .ended {
                 let index = getBoardIndex(x: position0.x, z: position0.z)
-                
+                print("tried to drop at \(index) according to gesture objc")
                 if self.moves.contains(where: {$0[0] == holdingPiece! && $0[1] == index}) {
                     let sep : Double = 1.82
                     var xPos = Double()
@@ -285,9 +728,31 @@ class BoardViewController: UIViewController {
                     else {
                         xPos = (9-sep*Double(boardArray[index].count))
                     }
-                    let actionMove = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[index]), duration: 0.1)
+                    if self.color == "white" {
+                        if self.boardArray[index].contains(where: {$0 > 15}) {
+                            self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "black")
+                            if index < 12 {
+                                xPos = (-9+sep*Double(boardArray[index].count))
+                            }
+                            else {
+                                xPos = (9-sep*Double(boardArray[index].count))
+                            }
+                        }
+                    }
+                    else {
+                        if self.boardArray[index].contains(where: {$0 < 16}) {
+                            self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "white")
+                            if index < 12 {
+                                xPos = (-9+sep*Double(boardArray[index].count))
+                            }
+                            else {
+                                xPos = (9-sep*Double(boardArray[index].count))
+                            }
+                        }
+                    }
+                    let actionMove = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[index]), duration: 0.2)
 //                    self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
-                    holdingNode!.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                    //holdingNode!.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
                     holdingNode!.runAction(actionMove)
                     boardArray[index].append(holdingName!)
                     usedMoves.append([holdingPiece!, index])
@@ -295,20 +760,40 @@ class BoardViewController: UIViewController {
                     if self.roll.count == 1 {
                         self.canMove = false // tell backend that turn is over ##################
                         self.holdingPiece = nil
-                        self.db?.collection("games").document(self.gameID).setData([
-                            "turn" : notMyColor,
-                            "isFirst" : false,
-                            "move0" : usedMoves[0],
-                            "move1" : usedMoves[1]
-                            ], merge: true)
+                        self.settingRoll = true
+                        if self.usedMoves.count == 2 {
+                            self.db?.collection("games").document(self.gameID).setData([
+                                "turn" : notMyColor,
+                                "isFirst" : false,
+                                "move0" : usedMoves[0],
+                                "move1" : usedMoves[1],
+                                "move2" : [0],
+                                "move3" : [0],
+                                "dice0or" : [0],
+                                "dice1or" : [0],
+                                ], merge: true)
+                        }
+                        else {
+                            self.db?.collection("games").document(self.gameID).setData([
+                                "turn" : notMyColor,
+                                "isFirst" : false,
+                                "move0" : usedMoves[0],
+                                "move1" : usedMoves[1],
+                                "move2" : usedMoves[2],
+                                "move3" : usedMoves[3],
+                                "dice0or" : [0],
+                                "dice1or" : [0],
+                                ], merge: true)
+                        }
+                        
                         self.firstRollOver = true
                         return
                     }
-                    
-                    self.roll.removeAll(where: {$0 == abs(holdingPiece! - index)})
-                    if self.roll.isEmpty {
-                        self.roll.append (abs(holdingPiece!-index))
-                    }
+                    self.roll.remove(at: self.roll.firstIndex(where: {$0 == abs(holdingPiece! - index)})!)
+                    //self.roll.removeFirst(where: {$0 == abs(holdingPiece! - index)})
+                    //if self.roll.isEmpty {
+                    //    self.roll.append (abs(holdingPiece!-index))
+                    //}
                     self.moves = []
                     for x in 0..<self.boardArray.count {
                         
@@ -336,21 +821,54 @@ class BoardViewController: UIViewController {
                         self.canMove = false // tell backend that turn is over ##################
                         self.holdingPiece = nil
                         if self.usedMoves.count == 1 {
+                            self.settingRoll = true
                             self.db?.collection("games").document(self.gameID).setData([
                                 "turn" : notMyColor,
                                 "isFirst" : false,
                                 "move0" : usedMoves[0],
-                                "move1" : [0]
+                                "move1" : [0],
+                                "move2" : [0],
+                                "move3" : [0],
+                                "dice0or" : [0],
+                                "dice1or" : [0],
                                 ], merge: true)
                         }
-//                        else {
-//                            self.db?.collection("games").document(self.gameID).setData([
-//                                "turn" : notMyColor,
-//                                "isFirst" : false,
-//                                "move0" : usedMoves[0],
-//                                "move1" : usedMoves[1]
-//                                ], merge: true)
-//                        }
+                        else if self.usedMoves.count == 2 {
+                            self.db?.collection("games").document(self.gameID).setData([
+                                "turn" : notMyColor,
+                                "isFirst" : false,
+                                "move0" : usedMoves[0],
+                                "move1" : usedMoves[1],
+                                "move2" : [0],
+                                "move3" : [0],
+                                "dice0or" : [0],
+                                "dice1or" : [0],
+                                ], merge: true)
+                        }
+                        else if self.usedMoves.count == 3 {
+                            self.db?.collection("games").document(self.gameID).setData([
+                                "turn" : notMyColor,
+                                "isFirst" : false,
+                                "move0" : usedMoves[0],
+                                "move1" : usedMoves[1],
+                                "move2" : usedMoves[2],
+                                "move3" : [0],
+                                "dice0or" : [0],
+                                "dice1or" : [0],
+                                ], merge: true)
+                        }
+                        else if self.usedMoves.count == 4 {
+                            self.db?.collection("games").document(self.gameID).setData([
+                                "turn" : notMyColor,
+                                "isFirst" : false,
+                                "move0" : usedMoves[0],
+                                "move1" : usedMoves[1],
+                                "move2" : usedMoves[2],
+                                "move3" : usedMoves[3],
+                                "dice0or" : [0],
+                                "dice1or" : [0],
+                                ], merge: true)
+                        }
                         
                         self.firstRollOver = true
                         return
@@ -360,29 +878,32 @@ class BoardViewController: UIViewController {
                 else {
                     let sep : Double = 1.82
                     var xPos = Double()
-                    if index < 12 {
+                    if holdingPiece! < 12 {
                         xPos = (-9+sep*Double(boardArray[holdingPiece!].count))
                     }
                     else {
                         xPos = (9-sep*Double(boardArray[holdingPiece!].count))
                     }
-                    let actionMove = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[holdingPiece!]), duration: 0.1)
+                    let actionMove = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[holdingPiece!]), duration: 0.3)
 //                    self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
 //                    self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].runAction(actionMove)
-                    holdingNode!.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                    //holdingNode!.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
                     holdingNode!.runAction(actionMove)
                     boardArray[holdingPiece!].append(holdingName!)
                     self.holdingPiece = nil
+                    
                 }
                 
                 
             }
             else {
-                let actionMove = SCNAction.move(to: SCNVector3(position0.x, 4, position0.z), duration: 0.1)
+//                let actionMove = SCNAction.move(to: SCNVector3(position0.x, 4, position0.z), duration: 0.05)
+//                holdingNode!.runAction(actionMove)
 //                self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
 //                self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].runAction(actionMove)
-                holdingNode!.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                holdingNode!.runAction(actionMove)
+                //holdingNode!.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                
+                holdingNode!.position = SCNVector3(position0.x, 4, position0.z)
             }
             
             return
@@ -390,10 +911,14 @@ class BoardViewController: UIViewController {
         
         if !hits.isEmpty{
             if let tappedNode = hits.first?.node {
-                let zPos = tappedNode.position.z
-                let xPos = tappedNode.position.x
+                let zPos = hits.last!.worldCoordinates.z//tappedNode.position.z
+                let xPos = hits.last!.worldCoordinates.x//tappedNode.position.x
                 
                 let index = getBoardIndex(x: xPos, z: zPos)
+                print(index)
+                if index == -1 {
+                    return
+                }
                 if self.boardArray[index].count == 0 {
                     return
                 }
@@ -408,16 +933,12 @@ class BoardViewController: UIViewController {
                     }
                 }
                 
-                //print(index)
                 let poss = self.moves.filter({$0[0] == index})
                 if poss.count == 0 {
-                    // tell backend turn is over ####
                     print("no possible moves")
-                    print(index)
-                    print(moves)
                     return
                 }
-                let position0 = hits.first!.worldCoordinates
+                let position0 = hits.last!.worldCoordinates
                 let actionMove = SCNAction.move(to: SCNVector3(position0.x, 4, position0.z), duration: 0.1)
                 if rec.state == .began {
                     self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
@@ -432,10 +953,11 @@ class BoardViewController: UIViewController {
                     self.holdingPiece = nil
                 }
                 else {
-                    holdingNode!.runAction(actionMove)
+                    if holdingNode != nil {
+                        holdingNode!.runAction(actionMove)
+                    }
+                    
                 }
-                
-                
             }
             else {
                 return
@@ -449,42 +971,47 @@ class BoardViewController: UIViewController {
         let xPos = x
         
         print("x: \(xPos) z: \(zPos)")
+        // put high priority rail touch condition here with return
+        
         var index = Int()
-        if zPos > 14 {
+        if zPos > 13.95 {
             index = xPos > 0 ? 23 : 0
         }
-        else if zPos > 11 {
+        else if zPos > 11.54 {
             index = xPos > 0 ? 22 : 1
         }
-        else if zPos > 9 {
+        else if zPos > 8.5 {
             index = xPos > 0 ? 21 : 2
         }
-        else if zPos > 6 {
+        else if zPos > 6.5 {
             index = xPos > 0 ? 20 : 3
         }
-        else if zPos > 4 {
+        else if zPos > 4.15 {
             index = xPos > 0 ? 19 : 4
         }
-        else if zPos > 0 {
+        else if zPos > 1.6 {
             index = xPos > 0 ? 18 : 5
         }
-        else if zPos > -3 {
+        else if zPos > -3.5 {
             index = xPos > 0 ? 17 : 6
         }
-        else if zPos > -6 {
+        else if zPos > -5.9 {
             index = xPos > 0 ? 16 : 7
         }
-        else if zPos > -8 {
+        else if zPos > -8.3 {
             index = xPos > 0 ? 15 : 8
         }
-        else if zPos > -11 {
+        else if zPos > -10.7 {
             index = xPos > 0 ? 14 : 9
         }
-        else if zPos > -13 {
+        else if zPos > -13.3 {
             index = xPos > 0 ? 13 : 10
         }
-        else {
+        else if zPos > -16{
             index = xPos > 0 ? 12 : 11
+        }
+        else {
+            index = -1
         }
         return index
     }
@@ -524,7 +1051,9 @@ class BoardViewController: UIViewController {
                         if self.color == "white" {
                             print("u are white and you go first w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
                             self.db?.collection("games").document(self.gameID).setData([
-                                "turn" : "white"], merge: true)
+                                "turn" : "white",
+                                "dice0or" : [0],
+                                "dice1or" : [0],], merge: true)
                             self.debugLabel.text = self.debugLabel.text! + "white turn, u go"
                             self.killInitialRoll()
                             self.afterRoll()
@@ -532,7 +1061,9 @@ class BoardViewController: UIViewController {
                         else {
                             print("u are black and you go first w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
                             self.db?.collection("games").document(self.gameID).setData([
-                                "turn" : "black"], merge: true)
+                                "turn" : "black",
+                                "dice0or" : [0],
+                                "dice1or" : [0],], merge: true)
                             self.debugLabel.text = self.debugLabel.text! + "black turn, u go"
                             self.killInitialRoll()
                             self.afterRoll()
@@ -542,7 +1073,9 @@ class BoardViewController: UIViewController {
                         if self.color == "white" {
                             print("u are white and you go after w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
                             self.db?.collection("games").document(self.gameID).setData([
-                                "turn" : "black"], merge: true)
+                                "turn" : "black",
+                                "dice0or" : [0],
+                                "dice1or" : [0],], merge: true)
                             self.debugLabel.text = self.debugLabel.text! + "black turn, not u"
                             self.killInitialRoll()
                             self.afterRoll()
@@ -551,7 +1084,9 @@ class BoardViewController: UIViewController {
                         else {
                             print("u are black and you go after w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
                             self.db?.collection("games").document(self.gameID).setData([
-                                "turn" : "white"], merge: true)
+                                "turn" : "white",
+                                "dice0or" : [0],
+                                "dice1or" : [0],], merge: true)
                             self.debugLabel.text = self.debugLabel.text! + "white turn, not u"
                             self.killInitialRoll()
                             self.afterRoll()
@@ -578,12 +1113,12 @@ class BoardViewController: UIViewController {
             dice1Position = SCNVector3(8, 7, -8)
         }
         else if spectating {
-            dice0Position = self.color != "white" ? SCNVector3(-7, 7, 8) : SCNVector3(7, 7, -8)
-            dice1Position = self.color != "white" ? SCNVector3(-9, 7, 8) : SCNVector3(7, 7, -8)
+            dice0Position = self.color != "white" ? SCNVector3(-9, 7, 7) : SCNVector3(9, 7, -7)
+            dice1Position = self.color != "white" ? SCNVector3(-9, 7, 9) : SCNVector3(9, 7, -9)
         }
         else {
-            dice0Position = self.color == "white" ? SCNVector3(-7, 7, 8) : SCNVector3(7, 7, -8)
-            dice1Position = self.color == "white" ? SCNVector3(-9, 7, 8) : SCNVector3(7, 7, -8)
+            dice0Position = self.color == "white" ? SCNVector3(-9, 7, 7) : SCNVector3(9, 7, -7)
+            dice1Position = self.color == "white" ? SCNVector3(-9, 7, 9) : SCNVector3(9, 7, -9)
         }
         let force = dice0Ballistics[0]
         let position = dice0Ballistics[1]
@@ -594,10 +1129,10 @@ class BoardViewController: UIViewController {
         }
         
 //        if mainScene.rootNode.childNodes.count == 32 {
-        var geometry:SCNGeometry
-        geometry = SCNBox(width: 1.0, height: 1.0, length: 1.0, chamferRadius: 0.1)
-        geometry.materials.first?.diffuse.contents = UIColor.cyan
-        geometry.firstMaterial?.diffuse.contents = UIColor.cyan
+//        var geometry:SCNGeometry
+//        geometry = SCNBox(width: 1.0, height: 1.0, length: 1.0, chamferRadius: 0.1)
+//        geometry.materials.first?.diffuse.contents = UIColor.cyan
+//        geometry.firstMaterial?.diffuse.contents = UIColor.cyan
         let geometryNode0 = SCNScene(named: "scnModels.scnassets/die.scn")!
         let geometryNode = geometryNode0.rootNode.childNodes.first!
         geometryNode.scale = SCNVector3(0.5, 0.5, 0.5)
@@ -615,9 +1150,9 @@ class BoardViewController: UIViewController {
         let force1 = dice1Ballistics[0]
         let position1 = dice1Ballistics[1]
 //        if mainScene.rootNode.childNodes.count == 33 {
-        var geometry1:SCNGeometry
-        geometry1 = SCNBox(width: 1.0, height: 1.0, length: 1.0, chamferRadius: 0.1)
-        geometry1.materials.first?.diffuse.contents = UIColor.cyan
+//        var geometry1:SCNGeometry
+//        geometry1 = SCNBox(width: 1.0, height: 1.0, length: 1.0, chamferRadius: 0.1)
+//        geometry1.materials.first?.diffuse.contents = UIColor.cyan
         let geometryNode10 = SCNScene(named: "scnModels.scnassets/die.scn")!
         let geometryNode1 = geometryNode10.rootNode.childNodes.first!
         geometryNode1.scale = SCNVector3(0.5, 0.5, 0.5)
@@ -643,7 +1178,7 @@ class BoardViewController: UIViewController {
         
         mainScene.physicsWorld.gravity.y = Float(-95.0)
         
-        sceneView.allowsCameraControl = true
+        sceneView.allowsCameraControl = false
         sceneView.autoenablesDefaultLighting = true
         
         cameraNode = SCNNode()
@@ -672,7 +1207,7 @@ class BoardViewController: UIViewController {
             p0 = SCNCylinder(radius: pieceRadius, height: pieceHeight)
             p0.materials.first?.diffuse.contents = UIColor.red
             let p0n = SCNNode(geometry: p0)
-            p0n.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+            p0n.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
             if x > 15 {
                 p0.materials.first?.diffuse.contents = UIColor.darkGray
             }
@@ -785,7 +1320,6 @@ class BoardViewController: UIViewController {
         
         for x in self.mainScene.rootNode.childNodes.count-2..<self.mainScene.rootNode.childNodes.count {
             let angles = self.mainScene.rootNode.childNodes[x].presentation.eulerAngles
-            print(angles)
             
             if (angles.x > 3 || angles.x < -3) && (angles.z < -3 || angles.z > 3) {
                 diceList.append(1)
@@ -800,17 +1334,6 @@ class BoardViewController: UIViewController {
             else if (angles.y > -0.8 && angles.y < 0.9) && (angles.z > 1.35 && angles.z < 2.2) {
                 diceList.append(2)
             }
-                //        else if (angles.x > 2.5 && angles.x < -2.5) && (angles.z > 1.35 && angles.z < 2.2)  {
-                //            self.colorLabel.text = "Two"
-                //        }
-                //        else if (angles.x > 1.35 && angles.x < 1.75) && (angles.y < -1.35 && angles.y > -1.75) {
-                //            self.colorLabel.text = "Two"
-                //        }
-                //        else if (angles.x < -1.35 && angles.x > -1.75) && (angles.y > 1.35 && angles.y < 1.75) {
-                //            self.colorLabel.text = "Two"
-                //        }
-                
-                
                 
             else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x > 1.35 && angles.x < 1.75) {
                 diceList.append(3)
@@ -819,7 +1342,6 @@ class BoardViewController: UIViewController {
                 diceList.append(3)
             }
                 
-                
             else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x < -1.35 && angles.x > -1.75) {
                 diceList.append(4)
             }
@@ -827,28 +1349,12 @@ class BoardViewController: UIViewController {
                 diceList.append(4)
             }
                 
-                
-                //        else if (angles.x > -1.2 && angles.x < 1.2) && (angles.z < -1.35 && angles.z > -1.75) {
-                //            self.colorLabel.text = "Five"
-                //            print("other classic five")
-                //        }
-                //        else if (angles.x > 3 || angles.x < -3) && (angles.x > 1.35 && angles.x < 1.75) {
-                //            self.colorLabel.text = "Five"
-                //        }
-                //        else if (angles.x < -1.35 && angles.x > -2.25) && (angles.z < -1.35 && angles.z > -1.75) {
-                //            self.colorLabel.text = "Five"
-                //        }
-                //        else if (angles.x > 2.6 && angles.x < -2.6) && (angles.z < -1.35 && angles.z > -1.75) {
-                //            self.colorLabel.text = "Five"
-                //            print("classic five")
-                //        }
             else if (angles.y > -0.8 && angles.y < 0.9) && (angles.z < -1.35 && angles.z > -1.75) {
                 diceList.append(5)
             }
             else if (angles.y > 2.4 || angles.y < -2.6) && (angles.z > 1.35 && angles.z < 2.2) {
                 diceList.append(5)
             }
-                
                 
             else if (angles.x < -3 || angles.x > 3) && angles.z > -0.2 && angles.z < 0.2 {
                 diceList.append(6)
@@ -860,6 +1366,9 @@ class BoardViewController: UIViewController {
             else {
                 diceList.append(4)
             }
+        }
+        if diceList[0] == diceList[1] {
+            diceList.append(contentsOf: [diceList[0], diceList[1]])
         }
         return diceList
     }
