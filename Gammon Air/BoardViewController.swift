@@ -29,6 +29,7 @@ class BoardViewController: UIViewController {
     var moves = [[Int]]()
     var canMove = false
     var position = [15.1, 12.6, 10.1, 7.7, 5.25, 2.8, -2.25, -4.7, -7.15, -9.55, -12, -14.35]
+    let railPosition = 17.5
     var holdingPiece : Int? = nil
     var holdingNode : SCNNode? = nil
     var holdingName : Int? = nil
@@ -38,6 +39,8 @@ class BoardViewController: UIViewController {
     
     var whiteRail = [Int]()
     var blackRail = [Int]()
+    var whiteBench = [Int]()
+    var blackBench = [Int]()
     
     var boardArray = [[Int]]()
     @IBOutlet var sceneView: SCNView!
@@ -46,6 +49,11 @@ class BoardViewController: UIViewController {
     
     @IBOutlet var debugLabel: UILabel!
     
+    @IBOutlet var rematchButton: UIImageView!
+    
+    @IBOutlet var gameOverView: UIView!
+    
+    @IBOutlet var winnerLabel: UILabel!
     
     var mainScene : SCNScene!
     var cameraNode: SCNNode!
@@ -89,6 +97,12 @@ class BoardViewController: UIViewController {
     }
     
     
+    @IBAction func debugButton(_ sender: Any) {
+        //debug
+        self.boardArray = [[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[11],[0],[0],[0],[10,9,8]]
+    }
+    
+    
     func addToRail (node : SCNNode, index : Int, color : String) {
         
         var wSep = Double()
@@ -114,19 +128,32 @@ class BoardViewController: UIViewController {
             if snapshot?.data()?["turn"] == nil {
                 return
             }
-            
+            print("is still observing")
             if self.settingRoll {
                 self.settingRoll = false
+                return
+            }
+            
+            if let winner = snapshot?.data()?["winner"] as? String {
+                if winner == self.color {
+                    self.winnerLabel.text = "You Won!"
+                }
+                else {
+                    self.winnerLabel.text = "You Lost!"
+                }
+                UIView.animate(withDuration: 1, animations: {
+                    self.gameOverView.alpha = 1
+                })
                 return
             }
             
             let dice0or = snapshot?.data()?["dice0or"] as! [Double]
             let dice1or = snapshot?.data()?["dice1or"] as! [Double]
             if snapshot?.data()?["turn"] as! String != self.color && dice0or.count != 1 {
-                self.mainScene.rootNode.childNodes[32].position = self.mainScene.rootNode.childNodes[32].presentation.position
                 self.mainScene.rootNode.childNodes[33].position = self.mainScene.rootNode.childNodes[33].presentation.position
-                self.mainScene.rootNode.childNodes[32].eulerAngles = SCNVector3(dice0or[0], dice0or[1], dice0or[2])
-                self.mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(dice1or[0], dice1or[1], dice1or[2])
+                self.mainScene.rootNode.childNodes[34].position = self.mainScene.rootNode.childNodes[34].presentation.position
+                self.mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(dice0or[0], dice0or[1], dice0or[2])
+                self.mainScene.rootNode.childNodes[34].eulerAngles = SCNVector3(dice1or[0], dice1or[1], dice1or[2])
                 return
             }
             
@@ -159,12 +186,42 @@ class BoardViewController: UIViewController {
                         self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
                         let name = self.whiteRail.last!
                         var xPos = Double()
+                        var height = Double()
                         if move0[1] < 12 {
-                            xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                            if self.boardArray[move0[1]].count >= 10 {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count-10))
+                                height = 1.5
+                            }
+                            else if self.boardArray[move0[1]].count >= 5 {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                                height = 0.5
+                            }
+                            
                         }
                         else {
-                            xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                            if self.boardArray[move0[1]].count >= 10 {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count-10))
+                                height = 1.5
+                            }
+                            else if self.boardArray[move0[1]].count >= 5 {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                                height = 0.5
+                            }
                         }
+//                        if move0[1] < 12 {
+//                            xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+//                        }
+//                        else {
+//                            xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                        
                         if self.color == "white" {
                             if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
                                 if move0[1] < 12 {
@@ -205,7 +262,7 @@ class BoardViewController: UIViewController {
                                 }
                             }
                             
-                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move0[1]]), duration: 0.3)
+                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move0[1]]), duration: 0.3)
                             self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
                             self.boardArray[move0[1]].append(name)
                             self.whiteRail.removeLast()
@@ -218,11 +275,35 @@ class BoardViewController: UIViewController {
                         self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove)
                         let name = self.blackRail.last!
                         var xPos = Double()
+                        var height = Double()
                         if move0[1] < 12 {
-                            xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                            if self.boardArray[move0[1]].count >= 10 {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count-10))
+                                height = 1.5
+                            }
+                            else if self.boardArray[move0[1]].count >= 5 {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                                height = 0.5
+                            }
+                            
                         }
                         else {
-                            xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                            if self.boardArray[move0[1]].count >= 10 {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count-10))
+                                height = 1.5
+                            }
+                            else if self.boardArray[move0[1]].count >= 5 {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                                height = 0.5
+                            }
                         }
                         if self.color == "white" {
                             if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
@@ -264,10 +345,74 @@ class BoardViewController: UIViewController {
                                 }
                             }
                             
-                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move0[1]]), duration: 0.3)
+                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move0[1]]), duration: 0.3)
                             self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove1)
                             self.boardArray[move0[1]].append(name)
                             self.blackRail.removeLast()
+                        })
+                    }
+                    else if move0[1] == -2 {
+                        position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].presentation.position
+                        let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove)
+                        let name = self.boardArray[move0[0]].last!
+                        var xPos = Double()
+                        var height = Double()
+                        if self.whiteBench.count >= 10 {
+                            xPos = (-9+sep*Double(self.whiteBench.count-10))
+                            height = 1.5
+                        }
+                        else if self.whiteBench.count >= 5 {
+                            xPos = (-9+sep*Double(self.whiteBench.count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (-9+sep*Double(self.whiteBench.count))
+                            height = 0.5
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                            let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove0)
+                            
+                        })
+                        DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove1)
+                            self.whiteBench.append(name)
+                            self.boardArray[move0[0]].removeLast()
+                        })
+                    }
+                    else if move0[1] == 25 {
+                        position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].presentation.position
+                        let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                        self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove)
+                        let name = self.boardArray[move0[0]].last!
+                        var xPos = Double()
+                        var height = Double()
+                        if self.blackBench.count >= 10 {
+                            xPos = (9-sep*Double(self.blackBench.count-10))
+                            height = 1.5
+                        }
+                        else if self.blackBench.count >= 5 {
+                            xPos = (9-sep*Double(self.blackBench.count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (9-sep*Double(self.blackBench.count))
+                            height = 0.5
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                            let actionMove0 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove0)
+                            
+                        })
+                        DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove1)
+                            self.blackBench.append(name)
+                            self.boardArray[move0[0]].removeLast()
                         })
                     }
                     else {
@@ -277,11 +422,35 @@ class BoardViewController: UIViewController {
                         self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove)
                         let name = self.boardArray[move0[0]].last!
                         var xPos = Double()
+                        var height = Double()
                         if move0[1] < 12 {
-                            xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                            if self.boardArray[move0[1]].count >= 10 {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count-10))
+                                height = 1.5
+                            }
+                            else if self.boardArray[move0[1]].count >= 5 {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (-9+sep*Double(self.boardArray[move0[1]].count))
+                                height = 0.5
+                            }
+                            
                         }
                         else {
-                            xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                            if self.boardArray[move0[1]].count >= 10 {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count-10))
+                                height = 1.5
+                            }
+                            else if self.boardArray[move0[1]].count >= 5 {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.boardArray[move0[1]].count))
+                                height = 0.5
+                            }
                         }
                         if self.color == "white" {
                             if self.boardArray[move0[1]].contains(where: {$0 < 16}) {
@@ -323,7 +492,7 @@ class BoardViewController: UIViewController {
                                 }
                             }
                             
-                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move0[1]]), duration: 0.3)
+                            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move0[1]]), duration: 0.3)
                             self.mainScene.rootNode.childNodes[1+self.boardArray[move0[0]].last!].runAction(actionMove1)
                             self.boardArray[move0[1]].append(name)
                             self.boardArray[move0[0]].removeLast()
@@ -344,11 +513,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
                             let name = self.whiteRail.last!
                             var xPos = Double()
+                            var height = Double()
                             if move1[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move1[1]].count))
+                                if self.boardArray[move1[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move1[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move1[1]].count))
+                                if self.boardArray[move1[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move1[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move1[1]].contains(where: {$0 < 16}) {
@@ -390,7 +583,7 @@ class BoardViewController: UIViewController {
                                     }
                                 }
                                 
-                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move1[1]]), duration: 0.3)
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move1[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
                                 self.boardArray[move1[1]].append(name)
                                 self.whiteRail.removeLast()
@@ -403,11 +596,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove)
                             let name = self.blackRail.last!
                             var xPos = Double()
+                            var height = Double()
                             if move1[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move1[1]].count))
+                                if self.boardArray[move1[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move1[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move1[1]].count))
+                                if self.boardArray[move1[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move1[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move1[1]].contains(where: {$0 < 16}) {
@@ -449,10 +666,74 @@ class BoardViewController: UIViewController {
                                     }
                                 }
                                 
-                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move1[1]]), duration: 0.3)
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move1[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove1)
                                 self.boardArray[move1[1]].append(name)
                                 self.blackRail.removeLast()
+                            })
+                        }
+                        else if move1[1] == -2 {
+                            let position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].presentation.position
+                            let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove)
+                            let name = self.boardArray[move1[0]].last!
+                            var xPos = Double()
+                            var height = Double()
+                            if self.whiteBench.count >= 10 {
+                                xPos = (-9+sep*Double(self.whiteBench.count-10))
+                                height = 1.5
+                            }
+                            else if self.whiteBench.count >= 5 {
+                                xPos = (-9+sep*Double(self.whiteBench.count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (-9+sep*Double(self.whiteBench.count))
+                                height = 0.5
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                let actionmove1 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionmove1)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove1)
+                                self.whiteBench.append(name)
+                                self.boardArray[move1[0]].removeLast()
+                            })
+                        }
+                        else if move1[1] == 25 {
+                            let position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].presentation.position
+                            let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove)
+                            let name = self.boardArray[move1[0]].last!
+                            var xPos = Double()
+                            var height = Double()
+                            if self.blackBench.count >= 10 {
+                                xPos = (9-sep*Double(self.blackBench.count-10))
+                                height = 1.5
+                            }
+                            else if self.blackBench.count >= 5 {
+                                xPos = (9-sep*Double(self.blackBench.count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.blackBench.count))
+                                height = 0.5
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                let actionmove1 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionmove1)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove1)
+                                self.blackBench.append(name)
+                                self.boardArray[move1[0]].removeLast()
                             })
                         }
                         else {
@@ -462,11 +743,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove)
                             let name = self.boardArray[move1[0]].last!
                             var xPos = Double()
+                            var height = Double()
                             if move1[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move1[1]].count))
+                                if self.boardArray[move1[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move1[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move1[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move1[1]].count))
+                                if self.boardArray[move1[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move1[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move1[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move1[1]].contains(where: {$0 < 16}) {
@@ -506,7 +811,7 @@ class BoardViewController: UIViewController {
                                         self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move1[1]].last!], index: move1[1], color: "black")
                                     }
                                 }
-                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move1[1]]), duration: 0.3)
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move1[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.boardArray[move1[0]].last!].runAction(actionMove1)
                                 self.boardArray[move1[1]].append(name)
                                 self.boardArray[move1[0]].removeLast()
@@ -526,11 +831,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
                             let name = self.whiteRail.last!
                             var xPos = Double()
+                            var height = Double()
                             if move2[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move2[1]].count))
+                                if self.boardArray[move2[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move2[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move2[1]].count))
+                                if self.boardArray[move2[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move2[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move2[1]].contains(where: {$0 < 16}) {
@@ -572,7 +901,7 @@ class BoardViewController: UIViewController {
                                     }
                                 }
                                 
-                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move2[1]]), duration: 0.3)
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move2[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
                                 self.boardArray[move2[1]].append(name)
                                 self.whiteRail.removeLast()
@@ -585,11 +914,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove)
                             let name = self.blackRail.last!
                             var xPos = Double()
+                            var height = Double()
                             if move2[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move2[1]].count))
+                                if self.boardArray[move2[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move2[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move2[1]].count))
+                                if self.boardArray[move2[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move2[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move2[1]].contains(where: {$0 < 16}) {
@@ -631,10 +984,74 @@ class BoardViewController: UIViewController {
                                     }
                                 }
                                 
-                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move2[1]]), duration: 0.3)
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move2[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove1)
                                 self.boardArray[move2[1]].append(name)
                                 self.blackRail.removeLast()
+                            })
+                        }
+                        else if move2[1] == -2 {
+                            let position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].presentation.position
+                            let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionMove)
+                            let name = self.boardArray[move2[0]].last!
+                            var xPos = Double()
+                            var height = Double()
+                            if self.whiteBench.count >= 10 {
+                                xPos = (-9+sep*Double(self.whiteBench.count-10))
+                                height = 1.5
+                            }
+                            else if self.whiteBench.count >= 5 {
+                                xPos = (-9+sep*Double(self.whiteBench.count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (-9+sep*Double(self.whiteBench.count))
+                                height = 0.5
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                let actionmove2 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionmove2)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionMove1)
+                                self.whiteBench.append(name)
+                                self.boardArray[move2[0]].removeLast()
+                            })
+                        }
+                        else if move2[1] == 25 {
+                            let position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].presentation.position
+                            let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionMove)
+                            let name = self.boardArray[move2[0]].last!
+                            var xPos = Double()
+                            var height = Double()
+                            if self.blackBench.count >= 10 {
+                                xPos = (9-sep*Double(self.blackBench.count-10))
+                                height = 1.5
+                            }
+                            else if self.blackBench.count >= 5 {
+                                xPos = (9-sep*Double(self.blackBench.count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.blackBench.count))
+                                height = 0.5
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                let actionmove2 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionmove2)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionMove1)
+                                self.blackBench.append(name)
+                                self.boardArray[move2[0]].removeLast()
                             })
                         }
                         else {
@@ -645,11 +1062,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionMove)
                             let name = self.boardArray[move2[0]].last!
                             var xPos = Double()
+                            var height = Double()
                             if move2[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move2[1]].count))
+                                if self.boardArray[move2[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move2[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move2[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move2[1]].count))
+                                if self.boardArray[move2[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move2[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move2[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move2[1]].contains(where: {$0 < 16}) {
@@ -689,7 +1130,7 @@ class BoardViewController: UIViewController {
                                         self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move2[1]].last!], index: move2[1], color: "black")
                                     }
                                 }
-                                let actionmove2 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move2[1]]), duration: 0.3)
+                                let actionmove2 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move2[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.boardArray[move2[0]].last!].runAction(actionmove2)
                                 self.boardArray[move2[1]].append(name)
                                 self.boardArray[move2[0]].removeLast()
@@ -707,11 +1148,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
                             let name = self.whiteRail.last!
                             var xPos = Double()
+                            var height = Double()
                             if move3[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move3[1]].count))
+                                if self.boardArray[move3[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move3[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move3[1]].count))
+                                if self.boardArray[move3[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move3[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move3[1]].contains(where: {$0 < 16}) {
@@ -753,24 +1218,48 @@ class BoardViewController: UIViewController {
                                     }
                                 }
                                 
-                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move3[1]]), duration: 0.3)
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move3[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
                                 self.boardArray[move3[1]].append(name)
                                 self.whiteRail.removeLast()
                             })
                         }
-                        else if move1[0] == 24 {
+                        else if move3[0] == 24 {
                             let position00 = self.mainScene.rootNode.childNodes[1+self.blackRail.last!].presentation.position
                             let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
                             self.mainScene.rootNode.childNodes[1+self.blackRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
                             self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove)
                             let name = self.blackRail.last!
                             var xPos = Double()
+                            var height = Double()
                             if move3[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move3[1]].count))
+                                if self.boardArray[move3[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move3[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move3[1]].count))
+                                if self.boardArray[move3[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move3[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move3[1]].contains(where: {$0 < 16}) {
@@ -812,10 +1301,74 @@ class BoardViewController: UIViewController {
                                     }
                                 }
                                 
-                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move3[1]]), duration: 0.3)
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move3[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove1)
                                 self.boardArray[move3[1]].append(name)
                                 self.blackRail.removeLast()
+                            })
+                        }
+                        else if move3[1] == -2 {
+                            let position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].presentation.position
+                            let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionMove)
+                            let name = self.boardArray[move3[0]].last!
+                            var xPos = Double()
+                            var height = Double()
+                            if self.whiteBench.count >= 10 {
+                                xPos = (-9+sep*Double(self.whiteBench.count-10))
+                                height = 1.5
+                            }
+                            else if self.whiteBench.count >= 5 {
+                                xPos = (-9+sep*Double(self.whiteBench.count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (-9+sep*Double(self.whiteBench.count))
+                                height = 0.5
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                let actionmove3 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionmove3)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionMove1)
+                                self.whiteBench.append(name)
+                                self.boardArray[move3[0]].removeLast()
+                            })
+                        }
+                        else if move3[1] == 25 {
+                            let position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].presentation.position
+                            let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                            self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionMove)
+                            let name = self.boardArray[move3[0]].last!
+                            var xPos = Double()
+                            var height = Double()
+                            if self.blackBench.count >= 10 {
+                                xPos = (9-sep*Double(self.blackBench.count-10))
+                                height = 1.5
+                            }
+                            else if self.blackBench.count >= 5 {
+                                xPos = (9-sep*Double(self.blackBench.count-5))
+                                height = 1.0
+                            }
+                            else {
+                                xPos = (9-sep*Double(self.blackBench.count))
+                                height = 0.5
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
+                                let actionmove3 = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionmove3)
+                                
+                            })
+                            DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
+                                let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
+                                self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionMove1)
+                                self.blackBench.append(name)
+                                self.boardArray[move3[0]].removeLast()
                             })
                         }
                         else {
@@ -826,11 +1379,35 @@ class BoardViewController: UIViewController {
                             self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionMove)
                             let name = self.boardArray[move3[0]].last!
                             var xPos = Double()
+                            var height = Double()
                             if move3[1] < 12 {
-                                xPos = (-9+sep*Double(self.boardArray[move3[1]].count))
+                                if self.boardArray[move3[1]].count >= 10 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move3[1]].count >= 5 {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (-9+sep*Double(self.boardArray[move3[1]].count))
+                                    height = 0.5
+                                }
+                                
                             }
                             else {
-                                xPos = (9-sep*Double(self.boardArray[move3[1]].count))
+                                if self.boardArray[move3[1]].count >= 10 {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-10))
+                                    height = 1.5
+                                }
+                                else if self.boardArray[move3[1]].count >= 5 {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count-5))
+                                    height = 1.0
+                                }
+                                else {
+                                    xPos = (9-sep*Double(self.boardArray[move3[1]].count))
+                                    height = 0.5
+                                }
                             }
                             if self.color == "white" {
                                 if self.boardArray[move3[1]].contains(where: {$0 < 16}) {
@@ -870,7 +1447,7 @@ class BoardViewController: UIViewController {
                                         self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[move3[1]].last!], index: move3[1], color: "black")
                                     }
                                 }
-                                let actionmove3 = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[move3[1]]), duration: 0.3)
+                                let actionmove3 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move3[1]]), duration: 0.3)
                                 self.mainScene.rootNode.childNodes[1+self.boardArray[move3[0]].last!].runAction(actionmove3)
                                 self.boardArray[move3[1]].append(name)
                                 self.boardArray[move3[0]].removeLast()
@@ -896,8 +1473,8 @@ class BoardViewController: UIViewController {
                         //let roll0 = self.getDice()
                         //print("settleDice says roll is : \(roll0[0]), \(roll0[1])")
                         self.roll = self.getDice()
-                        let angles = self.mainScene.rootNode.childNodes[32].presentation.eulerAngles
-                        let angles0 = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
+                        let angles = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
+                        let angles0 = self.mainScene.rootNode.childNodes[34].presentation.eulerAngles
                         
                         self.settingRoll = true
                         self.db?.collection("games").document(self.gameID).setData([
@@ -907,6 +1484,10 @@ class BoardViewController: UIViewController {
                         self.debugLabel.text = String(self.roll[0]) + String(self.roll[1])
                         self.moves = [[Int]]()
                         self.usedMoves = [[Int]]()
+                        let whiteBack = self.boardArray[0..<18]
+                        //let whiteBack0 = self.boardArray[18..<24]
+                        let blackBack = self.boardArray[6..<24]
+                        //let blackBack0 = self.boardArray[0..<7]
                         if self.color == "white" {
                             for x in 0..<self.boardArray.count {
                                 if self.boardArray[x].contains(where: {$0 < 16}){
@@ -915,13 +1496,45 @@ class BoardViewController: UIViewController {
                                             self.moves.append([x, x+self.roll[0]])
                                         }
                                     }
+                                    // roll[0] adds to go off board
+                                    else if (!whiteBack.contains(where: {$0.contains(where: {$0 <= 15})})) { // all in backboard
+                                        if !self.boardArray[24-self.roll[0]].contains(where: {$0 <= 15}) { // roll space is empty
+                                            if self.boardArray[18..<24-self.roll[0]].contains(where: {$0.contains(where: {$0 <= 15})}) {
+                                                
+                                            }
+                                            else {
+                                                self.moves.append([x, -2])
+                                            }
+                                        }
+                                        else if x+self.roll[0] == 24 {
+                                            self.moves.append([x, -2])
+                                        }
+                                        
+                                        
+                                    }
                                     if x+self.roll[1] < self.boardArray.count {
                                         if self.boardArray[x+self.roll[1]].contains(where: {$0 < 16}) ||  self.boardArray[x+self.roll[1]].count <= 1{
                                             self.moves.append([x, x+self.roll[1]])
                                         }
                                     }
+                                    else if (!whiteBack.contains(where: {$0.contains(where: {$0 <= 15})})) {
+                                        if !self.boardArray[24-self.roll[1]].contains(where: {$0 <= 15}) {
+                                            if self.boardArray[18..<24-self.roll[1]].contains(where: {$0.contains(where: {$0 <= 15})}) {
+                                                
+                                            }
+                                            else {
+                                                self.moves.append([x, -2])
+                                            }
+                                        }
+                                        else if x+self.roll[1] == 24 {
+                                            self.moves.append([x, -2])
+                                        }
+                                    }
                                 }
                             }
+                            
+                            
+                            
                             if self.whiteRail.count != 0 {
                                 self.moves.removeAll()
                                 if self.boardArray[self.roll[0]-1].contains(where: {$0 < 16}) || self.boardArray[self.roll[0]-1].count <= 1 {
@@ -959,9 +1572,38 @@ class BoardViewController: UIViewController {
                                             self.moves.append([x, x-self.roll[0]])
                                         }
                                     }
+//                                    else if !blackBack.contains(where: {$0.contains(where: {$0 >= 16})}) {
+//                                        self.moves.append([x, 25])
+//                                    }
+                                    else if (!blackBack.contains(where: {$0.contains(where: {$0 >= 16})})) {
+                                        if !self.boardArray[-1+self.roll[0]].contains(where: {$0 >= 16}) {
+                                            if self.boardArray[self.roll[0]..<7].contains(where: {$0.contains(where: {$0 >= 16})}) {
+                                                
+                                            }
+                                            else {
+                                                self.moves.append([x, 25])
+                                            }
+                                        }
+                                        else if x-self.roll[0] == -1 {
+                                            self.moves.append([x, 25])
+                                        }
+                                    }
                                     if x-self.roll[1] >= 0 {
-                                        if self.boardArray[x-self.roll[1]].contains(where: {$0 > 15}) ||  self.boardArray[x-self.roll[1]].count <= 1{
+                                        if self.boardArray[x-self.roll[1]].contains(where: {$0 >= 16}) ||  self.boardArray[x-self.roll[1]].count <= 1{
                                             self.moves.append([x, x-self.roll[1]])
+                                        }
+                                    }
+                                    else if (!blackBack.contains(where: {$0.contains(where: {$0 >= 16})})) {
+                                        if !self.boardArray[-1+self.roll[1]].contains(where: {$0 >= 16}) {
+                                            if self.boardArray[self.roll[1]..<7].contains(where: {$0.contains(where: {$0 >= 16})}) {
+                                                
+                                            }
+                                            else {
+                                                self.moves.append([x, 25])
+                                            }
+                                        }
+                                        else if x-self.roll[1] == -1 {
+                                            self.moves.append([x, 25])
                                         }
                                     }
                                 }
@@ -998,8 +1640,8 @@ class BoardViewController: UIViewController {
                     }
 //                    DispatchQueue.main.asyncAfter(deadline: .now()+6, execute: {
 //                        self.roll = self.getDice()
-//                        let angles = self.mainScene.rootNode.childNodes[32].presentation.eulerAngles
-//                        let angles0 = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
+//                        let angles = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
+//                        let angles0 = self.mainScene.rootNode.childNodes[34].presentation.eulerAngles
 //
 //                        self.settingRoll = true
 //                        self.db?.collection("games").document(self.gameID).setData([
@@ -1168,40 +1810,123 @@ class BoardViewController: UIViewController {
                 if self.moves.contains(where: {$0[0] == holdingPiece! && $0[1] == index}) {
                     let sep : Double = 1.82
                     var xPos = Double()
-                    if index < 12 {
-                        xPos = (-9+sep*Double(boardArray[index].count))
-                    }
-                    else {
-                        xPos = (9-sep*Double(boardArray[index].count))
-                    }
-                    if self.color == "white" {
-                        if self.boardArray[index].contains(where: {$0 > 15}) {
-                            self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "black")
-                            if index < 12 {
-                                xPos = (-9+sep*Double(boardArray[index].count))
+                    var height = Double()
+                    
+                    if index != -2 && index != 25 {
+                        if self.color == "white" {
+                            if self.boardArray[index].contains(where: {$0 > 15}) {
+                                self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "black")
+                                //                            if index < 12 {
+                                //                                xPos = (-9+sep*Double(boardArray[index].count))
+                                //                            }
+                                //                            else {
+                                //                                xPos = (9-sep*Double(boardArray[index].count))
+                                //                            }
                             }
-                            else {
-                                xPos = (9-sep*Double(boardArray[index].count))
+                        }
+                        else {
+                            if self.boardArray[index].contains(where: {$0 < 16}) {
+                                self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "white")
+                                //                            if index < 12 {
+                                //                                xPos = (-9+sep*Double(boardArray[index].count))
+                                //                            }
+                                //                            else {
+                                //                                xPos = (9-sep*Double(boardArray[index].count))
+                                //                            }
                             }
                         }
                     }
-                    else {
-                        if self.boardArray[index].contains(where: {$0 < 16}) {
-                            self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "white")
-                            if index < 12 {
-                                xPos = (-9+sep*Double(boardArray[index].count))
-                            }
-                            else {
-                                xPos = (9-sep*Double(boardArray[index].count))
-                            }
+                    
+                    var zPos = Double()
+                    if index == -2 {
+                        if self.whiteBench.count >= 10 {
+                            xPos = (-9+sep*Double(self.whiteBench.count-10))
+                            height = 1.5
                         }
+                        else if self.whiteBench.count >= 5 {
+                            xPos = (-9+sep*Double(self.whiteBench.count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (-9+sep*Double(self.whiteBench.count))
+                            height = 0.5
+                        }
+                        zPos = self.railPosition
+                        self.whiteBench.append(holdingName!)
                     }
-                    let actionMove = SCNAction.move(to: SCNVector3(xPos, 0.5, self.position[index]), duration: 0.2)
-//                    self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
-                    //holdingNode!.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                    else if index == 25 {
+                        if self.blackBench.count >= 10 {
+                            xPos = (9-sep*Double(self.blackBench.count-10))
+                            height = 1.5
+                        }
+                        else if self.blackBench.count >= 5 {
+                            xPos = (9-sep*Double(self.blackBench.count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (9-sep*Double(self.blackBench.count))
+                            height = 0.5
+                        }
+                        zPos = self.railPosition
+                        self.blackBench.append(holdingName!)
+                    }
+                    else if index < 12 {
+                        if boardArray[index].count >= 10 {
+                            xPos = (-9+sep*Double(boardArray[index].count-10))
+                            height = 1.5
+                        }
+                        else if boardArray[index].count >= 5 {
+                            xPos = (-9+sep*Double(boardArray[index].count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (-9+sep*Double(boardArray[index].count))
+                            height = 0.5
+                        }
+                        zPos = self.position[index]
+                        boardArray[index].append(holdingName!)
+                    }
+                    else {
+                        
+                        if boardArray[index].count >= 10 {
+                            xPos = (9-sep*Double(boardArray[index].count-10))
+                            height = 1.5
+                        }
+                        else if boardArray[index].count >= 5 {
+                            xPos = (9-sep*Double(boardArray[index].count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (9-sep*Double(boardArray[index].count))
+                            height = 0.5
+                        }
+                        zPos = self.position[index]
+                        boardArray[index].append(holdingName!)
+                    }
+                    
+                    let actionMove = SCNAction.move(to: SCNVector3(xPos, height, zPos), duration: 0.2)
                     holdingNode!.runAction(actionMove)
-                    boardArray[index].append(holdingName!)
+                    
                     usedMoves.append([holdingPiece!, index])
+                    
+                    if index == -2 || index == 25 { // move was off the board, check for end
+                        if self.color == "white" {
+                            if !self.boardArray.contains(where: {$0.contains(where: {$0 <= 15})}) {
+                                self.db?.collection("games").document(self.gameID).setData([
+                                    "winner" : "white",
+                                    ], merge: true)
+                                return
+                            }
+                        }
+                        else {
+                            if !self.boardArray.contains(where: {$0.contains(where: {$0 >= 16})}) {
+                                self.db?.collection("games").document(self.gameID).setData([
+                                    "winner" : "black",
+                                    ], merge: true)
+                                return
+                            }
+                        }
+                    }
                     
                     if self.roll.count == 1 {
                         self.canMove = false // tell backend that turn is over ##################
@@ -1235,12 +1960,23 @@ class BoardViewController: UIViewController {
                         self.firstRollOver = true
                         return
                     }
-                    self.roll.remove(at: self.roll.firstIndex(where: {$0 == abs(holdingPiece! - index)})!)
+                    if index == 25 {
+                        self.roll.remove(at: self.roll.firstIndex(where: {$0 == abs(-1-holdingPiece!)}) ?? self.roll.firstIndex(where: {$0 == self.roll.max()!})! )
+                    }
+                    else if index == -2 {
+                        self.roll.remove(at: self.roll.firstIndex(where: {$0 == abs(24-holdingPiece!)}) ?? self.roll.firstIndex(where: {$0 == self.roll.max()!})!)
+                    }
+                    else {
+                        self.roll.remove(at: self.roll.firstIndex(where: {$0 == abs(holdingPiece! - index)})!)
+                    }
+                    
                     //self.roll.removeFirst(where: {$0 == abs(holdingPiece! - index)})
                     //if self.roll.isEmpty {
                     //    self.roll.append (abs(holdingPiece!-index))
                     //}
                     self.moves = []
+                    let whiteBack = self.boardArray[0..<18]
+                    let blackBack = self.boardArray[6..<24]
                     for x in 0..<self.boardArray.count {
                         
                         if color == "white" {
@@ -1250,6 +1986,22 @@ class BoardViewController: UIViewController {
                                         self.moves.append([x, x+self.roll[0]])
                                     }
                                 }
+//                                else if !whiteBack.contains(where: {$0.contains(where: {$0 <= 15})}) {
+//                                    self.moves.append([x, -2])
+//                                }
+                                else if (!whiteBack.contains(where: {$0.contains(where: {$0 <= 15})})) {
+                                    if !self.boardArray[24-roll[0]].contains(where: {$0 <= 15}) {
+                                        if self.boardArray[18..<24-roll[0]].contains(where: {$0.contains(where: {$0 <= 15})}) {
+                                            
+                                        }
+                                        else {
+                                            self.moves.append([x, -2])
+                                        }
+                                    }
+                                    else if x+self.roll[0] == 24 {
+                                        self.moves.append([x, -2])
+                                    }
+                                }
                             }
                         }
                         else {
@@ -1257,6 +2009,22 @@ class BoardViewController: UIViewController {
                                 if x-self.roll[0] >= 0 {
                                     if self.boardArray[x-self.roll[0]].contains(where: {$0 > 15}) || self.boardArray[x-self.roll[0]].count <= 1 {
                                         self.moves.append([x, x-self.roll[0]])
+                                    }
+                                }
+//                                else if !blackBack.contains(where: {$0.contains(where: {$0 >= 16})}) {
+//                                    self.moves.append([x, 25])
+//                                }
+                                else if (!blackBack.contains(where: {$0.contains(where: {$0 >= 16})})) {
+                                    if !self.boardArray[-1+roll[0]].contains(where: {$0 >= 16}) {
+                                        if self.boardArray[roll[0]..<7].contains(where: {$0.contains(where: {$0 >= 16})}) {
+                                            
+                                        }
+                                        else {
+                                            self.moves.append([x, 25])
+                                        }
+                                    }
+                                    else if x-self.roll[0] == -1 {
+                                        self.moves.append([x, 25])
                                     }
                                 }
                             }
@@ -1349,13 +2117,39 @@ class BoardViewController: UIViewController {
                         newPosition = SCNVector3(wSep*Double(-self.blackRail.count), 0.5, 0.3)
                     }
                     else if holdingPiece! < 12 {
-                        xPos = (-9+sep*Double(boardArray[holdingPiece!].count))
-                        newPosition = SCNVector3(xPos, 0.5, self.position[holdingPiece!])
+                        //xPos = (-9+sep*Double(boardArray[holdingPiece!].count))
+                        var height = Double()
+                        if boardArray[holdingPiece!].count >= 10 {
+                            xPos = (-9+sep*Double(boardArray[holdingPiece!].count-10))
+                            height = 1.5
+                        }
+                        else if boardArray[holdingPiece!].count >= 5 {
+                            xPos = (-9+sep*Double(boardArray[holdingPiece!].count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (-9+sep*Double(boardArray[holdingPiece!].count))
+                            height = 0.5
+                        }
+                        newPosition = SCNVector3(xPos, height, self.position[holdingPiece!])
                         boardArray[holdingPiece!].append(holdingName!)
                     }
                     else {
-                        xPos = (9-sep*Double(boardArray[holdingPiece!].count))
-                        newPosition = SCNVector3(xPos, 0.5, self.position[holdingPiece!])
+                        //xPos = (9-sep*Double(boardArray[holdingPiece!].count))
+                        var height = Double()
+                        if boardArray[holdingPiece!].count >= 10 {
+                            xPos = (9-sep*Double(boardArray[holdingPiece!].count-10))
+                            height = 1.5
+                        }
+                        else if boardArray[holdingPiece!].count >= 5 {
+                            xPos = (9-sep*Double(boardArray[holdingPiece!].count-5))
+                            height = 1.0
+                        }
+                        else {
+                            xPos = (9-sep*Double(boardArray[holdingPiece!].count))
+                            height = 0.5
+                        }
+                        newPosition = SCNVector3(xPos, height, self.position[holdingPiece!])
                         boardArray[holdingPiece!].append(holdingName!)
                     }
                     let actionMove = SCNAction.move(to: newPosition, duration: 0.3)
@@ -1366,8 +2160,59 @@ class BoardViewController: UIViewController {
                 
             }
             else if rec.state == .ended {
-                print("debug: this should never be called")
-                self.debugLabel.text = "debug: this should never be called"
+                print("debug: special case in long press")
+                self.debugLabel.text = "debug: this is a special case"
+                let sep : Double = 1.82
+                var xPos = Double()
+                let wSep = 2.0
+                var newPosition = SCNVector3()
+                if holdingPiece! == -1 {
+                    self.whiteRail.append(holdingName!)
+                    newPosition = SCNVector3(wSep*Double(self.whiteRail.count), 0.5, 0.3)
+                }
+                else if holdingPiece! == 24 {
+                    self.blackRail.append(holdingName!)
+                    newPosition = SCNVector3(wSep*Double(-self.blackRail.count), 0.5, 0.3)
+                }
+                else if holdingPiece! < 12 {
+                    //xPos = (-9+sep*Double(boardArray[holdingPiece!].count))
+                    var height = Double()
+                    if boardArray[holdingPiece!].count >= 10 {
+                        xPos = (-9+sep*Double(boardArray[holdingPiece!].count-10))
+                        height = 1.5
+                    }
+                    else if boardArray[holdingPiece!].count >= 5 {
+                        xPos = (-9+sep*Double(boardArray[holdingPiece!].count-5))
+                        height = 1.0
+                    }
+                    else {
+                        xPos = (-9+sep*Double(boardArray[holdingPiece!].count))
+                        height = 0.5
+                    }
+                    newPosition = SCNVector3(xPos, height, self.position[holdingPiece!])
+                    boardArray[holdingPiece!].append(holdingName!)
+                }
+                else {
+                    //xPos = (9-sep*Double(boardArray[holdingPiece!].count))
+                    var height = Double()
+                    if boardArray[holdingPiece!].count >= 10 {
+                        xPos = (9-sep*Double(boardArray[holdingPiece!].count-10))
+                        height = 1.5
+                    }
+                    else if boardArray[holdingPiece!].count >= 5 {
+                        xPos = (9-sep*Double(boardArray[holdingPiece!].count-5))
+                        height = 1.0
+                    }
+                    else {
+                        xPos = (9-sep*Double(boardArray[holdingPiece!].count))
+                        height = 0.5
+                    }
+                    newPosition = SCNVector3(xPos, height, self.position[holdingPiece!])
+                    boardArray[holdingPiece!].append(holdingName!)
+                }
+                let actionMove = SCNAction.move(to: newPosition, duration: 0.3)
+                holdingNode!.runAction(actionMove)
+                self.holdingPiece = nil
             }
             else {
 //                let actionMove = SCNAction.move(to: SCNVector3(position0.x, 4, position0.z), duration: 0.05)
@@ -1389,10 +2234,20 @@ class BoardViewController: UIViewController {
                 
                 let index = getBoardIndex(x: xPos, z: zPos)
                 print("first grab thinks pos is: \(zPos)")
-                if index == -1 { // white rail
+                
+                if index == -5 { // getBoardIndex returning null
+                    return
+                }
+                else if index == -1 { // white rail
                     
                 }
                 else if index == 24 { // black rail
+                    
+                }
+                else if index == 25 { // black bench
+                    
+                }
+                else if index == -2 { // white bench
                     
                 }
                 else {
@@ -1410,9 +2265,7 @@ class BoardViewController: UIViewController {
                         }
                     }
                 }
-                if index == -5 { // getBoardIndex returning null
-                    return
-                }
+                
                 
                 
                 let poss = self.moves.filter({$0[0] == index})
@@ -1483,7 +2336,10 @@ class BoardViewController: UIViewController {
         // put high priority rail touch condition here with return
         
         var index = Int()
-        if zPos > 13.84 {
+        if zPos > 16.4 {
+            index = xPos > 0 ? 25 : -2
+        }
+        else if zPos > 13.84 {
             index = xPos > 0 ? 23 : 0
         }
         else if zPos > 11.47 {
@@ -1690,9 +2546,9 @@ class BoardViewController: UIViewController {
         let force = dice0Ballistics[0]
         let position = dice0Ballistics[1]
         
-        if mainScene.rootNode.childNodes.count == 34 {
-            mainScene.rootNode.childNodes[32].removeFromParentNode()
-            mainScene.rootNode.childNodes[32].removeFromParentNode()
+        if mainScene.rootNode.childNodes.count == 35 {
+            mainScene.rootNode.childNodes[33].removeFromParentNode()
+            mainScene.rootNode.childNodes[33].removeFromParentNode()
         }
         
 //        if mainScene.rootNode.childNodes.count == 32 {
@@ -1709,9 +2565,9 @@ class BoardViewController: UIViewController {
         mainScene.rootNode.addChildNode(geometryNode)
 //        }
 //        else {
-//            mainScene.rootNode.childNodes[32].eulerAngles = SCNVector3(0, 0, 0)
-//            mainScene.rootNode.childNodes[32].position = dice0Position
-//            mainScene.rootNode.childNodes[32].physicsBody?.applyForce(force, at: position, asImpulse: true)
+//            mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(0, 0, 0)
+//            mainScene.rootNode.childNodes[33].position = dice0Position
+//            mainScene.rootNode.childNodes[33].physicsBody?.applyForce(force, at: position, asImpulse: true)
 //        }
     
         let force1 = dice1Ballistics[0]
@@ -1730,9 +2586,9 @@ class BoardViewController: UIViewController {
 //        }
 //        else {
 //            print("dice1 sees \(mainScene.rootNode.childNodes.count)")
-//            mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(0, 0, 0)
-//            mainScene.rootNode.childNodes[33].position = dice1Position
-//            mainScene.rootNode.childNodes[33].physicsBody?.applyForce(force1, at: position1, asImpulse: true)
+//            mainScene.rootNode.childNodes[34].eulerAngles = SCNVector3(0, 0, 0)
+//            mainScene.rootNode.childNodes[34].position = dice1Position
+//            mainScene.rootNode.childNodes[34].physicsBody?.applyForce(force1, at: position1, asImpulse: true)
 //        }
         
         
@@ -1766,7 +2622,7 @@ class BoardViewController: UIViewController {
         
         let pieceHeight : CGFloat = 0.5
         let pieceRadius : CGFloat = 0.90
-        let zSep = 2.35
+        //let zSep = 2.35
         let sep = 1.82
         
         for x in 1..<31 {
@@ -1877,16 +2733,23 @@ class BoardViewController: UIViewController {
             }
             mainScene.rootNode.addChildNode(p0n)
         }
-        print(boardArray)
+        var box0:SCNGeometry
+        box0 = SCNBox(width: 22.0, height: 0.5, length: 40.0, chamferRadius: 0.05)
+        box0.materials.first?.diffuse.contents = UIColor.clear
+        let box0Node = SCNNode(geometry: box0)
         
-        //print(self.mainScene.rootNode.childNodes.count)
+        box0Node.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+        box0Node.position = SCNVector3(0, -1, 0) //22 32 0.05
+        mainScene.rootNode.addChildNode(box0Node)
+        print(self.mainScene.rootNode.childNodes.count)
     }
     
     func getDice() -> [Int] {
         var diceList = [Int]()
         
-        for x in self.mainScene.rootNode.childNodes.count-2..<self.mainScene.rootNode.childNodes.count {
+        for x in 33..<35 {//self.mainScene.rootNode.childNodes.count-2..<self.mainScene.rootNode.childNodes.count {
             let angles = self.mainScene.rootNode.childNodes[x].presentation.eulerAngles
+            print(x)
             
             if (angles.x > 3 || angles.x < -3) && (angles.z < -3 || angles.z > 3) {
                 diceList.append(1)
@@ -1902,7 +2765,7 @@ class BoardViewController: UIViewController {
                 diceList.append(2)
             }
                 
-            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x > 1.35 && angles.x < 1.75) {
+            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x > 1.35 && angles.x < 1.75) { // 3s as 4
                 diceList.append(3)
             }
             else if (angles.z > 3 || angles.z < -3) && (angles.x < -1.35 && angles.x > -1.75) {
@@ -1923,7 +2786,7 @@ class BoardViewController: UIViewController {
                 diceList.append(5)
             }
                 
-            else if (angles.x < -3 || angles.x > 3) && angles.z > -0.2 && angles.z < 0.2 {
+            else if (angles.x < -3 || angles.x > 3) && angles.z > -0.2 && angles.z < 0.2 { // 3s have been 6s
                 diceList.append(6)
             }
             else if (angles.z < -3 || angles.z > 3) && (angles.x > -0.2 && angles.x < 0.2) {
@@ -1940,24 +2803,36 @@ class BoardViewController: UIViewController {
         return diceList
     }
     
-    var rollTimer: Timer?
     
     func settleDice (completion: @escaping () -> Void) {
-        let oldPos0 = self.mainScene.rootNode.childNodes[32].presentation.eulerAngles
-        let oldPos1 = self.mainScene.rootNode.childNodes[32].presentation.eulerAngles
+        let oldPos0 = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
+        let oldPos1 = self.mainScene.rootNode.childNodes[34].presentation.eulerAngles
         DispatchQueue.main.asyncAfter(deadline: .now()+1) {
-            let newPos0 = self.mainScene.rootNode.childNodes[32].presentation.eulerAngles
-            let newPos1 = self.mainScene.rootNode.childNodes[32].presentation.eulerAngles
-            print(oldPos0)
-            print(newPos0)
+            let newPos0 = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
+            let newPos1 = self.mainScene.rootNode.childNodes[34].presentation.eulerAngles
             let minInt : Float = 0.5
+            print("\n")
+            print(self.mainScene.rootNode.childNodes.count)
+            print("\(oldPos0) - \(newPos0)")
+            print("\(oldPos1) - \(newPos1)")
+            print(self.mainScene.rootNode.childNodes[33])
+            print("\n")
+            print(self.mainScene.rootNode.childNodes[34])
+            print("\n")
             if (abs(oldPos0.x-newPos0.x) < minInt) && (abs(oldPos0.y-newPos0.y) < minInt) && (abs(oldPos0.z-newPos0.z) < minInt) {
                 if  (abs(oldPos1.x-newPos1.x) < minInt) && (abs(oldPos1.y-newPos1.y) < minInt) && (abs(oldPos1.z-newPos1.z) < minInt) {
+                    print("sent completion")
                     completion()
                 }
-                
+                else {
+                    print("trying again")
+                    self.settleDice {
+                        completion()
+                    }
+                }
             }
             else {
+                print("trying again")
                 self.settleDice {
                     completion()
                 }
@@ -1966,6 +2841,13 @@ class BoardViewController: UIViewController {
     }
     
     @objc func returnTapped () {
+        if self.isHost {
+            let db = Firestore.firestore()
+            db.collection("games").document(gameID).delete()
+        }
+        if let vc = presentingViewController as? ViewController {
+            vc.isReturning = true
+        }
         presentingViewController?.dismiss(animated: true, completion: {
             
         })

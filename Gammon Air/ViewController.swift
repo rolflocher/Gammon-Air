@@ -59,6 +59,14 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             self.hostObserver?.remove()
         }
     }
+    var isReturning = false {
+        didSet {
+            if isReturning == true {
+                self.joinTable.reloadData()
+            }
+            isReturning = false
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
