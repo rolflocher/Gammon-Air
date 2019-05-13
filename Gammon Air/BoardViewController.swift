@@ -360,15 +360,15 @@ class BoardViewController: UIViewController {
                         var xPos = Double()
                         var height = Double()
                         if self.whiteBench.count >= 10 {
-                            xPos = (-9+sep*Double(self.whiteBench.count-10))
+                            xPos = (9-sep*Double(self.whiteBench.count-10))
                             height = 1.5
                         }
                         else if self.whiteBench.count >= 5 {
-                            xPos = (-9+sep*Double(self.whiteBench.count-5))
+                            xPos = (9-sep*Double(self.whiteBench.count-5))
                             height = 1.0
                         }
                         else {
-                            xPos = (-9+sep*Double(self.whiteBench.count))
+                            xPos = (9-sep*Double(self.whiteBench.count))
                             height = 0.5
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -392,15 +392,15 @@ class BoardViewController: UIViewController {
                         var xPos = Double()
                         var height = Double()
                         if self.blackBench.count >= 10 {
-                            xPos = (9-sep*Double(self.blackBench.count-10))
+                            xPos = (-9+sep*Double(self.blackBench.count-10))
                             height = 1.5
                         }
                         else if self.blackBench.count >= 5 {
-                            xPos = (9-sep*Double(self.blackBench.count-5))
+                            xPos = (-9+sep*Double(self.blackBench.count-5))
                             height = 1.0
                         }
                         else {
-                            xPos = (9-sep*Double(self.blackBench.count))
+                            xPos = (-9+sep*Double(self.blackBench.count))
                             height = 0.5
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -681,15 +681,15 @@ class BoardViewController: UIViewController {
                             var xPos = Double()
                             var height = Double()
                             if self.whiteBench.count >= 10 {
-                                xPos = (-9+sep*Double(self.whiteBench.count-10))
+                                xPos = (9-sep*Double(self.whiteBench.count-10))
                                 height = 1.5
                             }
                             else if self.whiteBench.count >= 5 {
-                                xPos = (-9+sep*Double(self.whiteBench.count-5))
+                                xPos = (9-sep*Double(self.whiteBench.count-5))
                                 height = 1.0
                             }
                             else {
-                                xPos = (-9+sep*Double(self.whiteBench.count))
+                                xPos = (9-sep*Double(self.whiteBench.count))
                                 height = 0.5
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -713,15 +713,15 @@ class BoardViewController: UIViewController {
                             var xPos = Double()
                             var height = Double()
                             if self.blackBench.count >= 10 {
-                                xPos = (9-sep*Double(self.blackBench.count-10))
+                                xPos = (-9+sep*Double(self.blackBench.count-10))
                                 height = 1.5
                             }
                             else if self.blackBench.count >= 5 {
-                                xPos = (9-sep*Double(self.blackBench.count-5))
+                                xPos = (-9+sep*Double(self.blackBench.count-5))
                                 height = 1.0
                             }
                             else {
-                                xPos = (9-sep*Double(self.blackBench.count))
+                                xPos = (-9+sep*Double(self.blackBench.count))
                                 height = 0.5
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -999,15 +999,15 @@ class BoardViewController: UIViewController {
                             var xPos = Double()
                             var height = Double()
                             if self.whiteBench.count >= 10 {
-                                xPos = (-9+sep*Double(self.whiteBench.count-10))
+                                xPos = (9-sep*Double(self.whiteBench.count-10))
                                 height = 1.5
                             }
                             else if self.whiteBench.count >= 5 {
-                                xPos = (-9+sep*Double(self.whiteBench.count-5))
+                                xPos = (9-sep*Double(self.whiteBench.count-5))
                                 height = 1.0
                             }
                             else {
-                                xPos = (-9+sep*Double(self.whiteBench.count))
+                                xPos = (9-sep*Double(self.whiteBench.count))
                                 height = 0.5
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -1031,15 +1031,15 @@ class BoardViewController: UIViewController {
                             var xPos = Double()
                             var height = Double()
                             if self.blackBench.count >= 10 {
-                                xPos = (9-sep*Double(self.blackBench.count-10))
+                                xPos = (-9+sep*Double(self.blackBench.count-10))
                                 height = 1.5
                             }
                             else if self.blackBench.count >= 5 {
-                                xPos = (9-sep*Double(self.blackBench.count-5))
+                                xPos = (-9+sep*Double(self.blackBench.count-5))
                                 height = 1.0
                             }
                             else {
-                                xPos = (9-sep*Double(self.blackBench.count))
+                                xPos = (-9+sep*Double(self.blackBench.count))
                                 height = 0.5
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -1316,15 +1316,15 @@ class BoardViewController: UIViewController {
                             var xPos = Double()
                             var height = Double()
                             if self.whiteBench.count >= 10 {
-                                xPos = (-9+sep*Double(self.whiteBench.count-10))
+                                xPos = (9-sep*Double(self.whiteBench.count-10))
                                 height = 1.5
                             }
                             else if self.whiteBench.count >= 5 {
-                                xPos = (-9+sep*Double(self.whiteBench.count-5))
+                                xPos = (9-sep*Double(self.whiteBench.count-5))
                                 height = 1.0
                             }
                             else {
-                                xPos = (-9+sep*Double(self.whiteBench.count))
+                                xPos = (9-sep*Double(self.whiteBench.count))
                                 height = 0.5
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -1348,15 +1348,15 @@ class BoardViewController: UIViewController {
                             var xPos = Double()
                             var height = Double()
                             if self.blackBench.count >= 10 {
-                                xPos = (9-sep*Double(self.blackBench.count-10))
+                                xPos = (-9+sep*Double(self.blackBench.count-10))
                                 height = 1.5
                             }
                             else if self.blackBench.count >= 5 {
-                                xPos = (9-sep*Double(self.blackBench.count-5))
+                                xPos = (-9+sep*Double(self.blackBench.count-5))
                                 height = 1.0
                             }
                             else {
-                                xPos = (9-sep*Double(self.blackBench.count))
+                                xPos = (-9+sep*Double(self.blackBench.count))
                                 height = 0.5
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
@@ -1796,16 +1796,14 @@ class BoardViewController: UIViewController {
         
         let location: CGPoint = rec.location(in: sceneView)
         let hits = self.sceneView.hitTest(location, options: [SCNHitTestOption.searchMode: SCNHitTestSearchMode.all.rawValue])
-        if hits.count == 0 {
-            return
-        }
+//        if hits.count == 0 {
+//            return
+//        }
         if holdingPiece != nil {
             let position0 = hits.last!.worldCoordinates
-            //print(hits)
             //print("hold thinks pos is: \(position0.z)")
-            if rec.state == .ended {
+            if rec.state == .ended || rec.state == .cancelled || rec.state == .failed {
                 let index = getBoardIndex(x: position0.x, z: position0.z)
-                //print("tried to drop at \(index) according to gesture objc")
                 
                 if self.moves.contains(where: {$0[0] == holdingPiece! && $0[1] == index}) {
                     let sep : Double = 1.82
@@ -1816,23 +1814,11 @@ class BoardViewController: UIViewController {
                         if self.color == "white" {
                             if self.boardArray[index].contains(where: {$0 > 15}) {
                                 self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "black")
-                                //                            if index < 12 {
-                                //                                xPos = (-9+sep*Double(boardArray[index].count))
-                                //                            }
-                                //                            else {
-                                //                                xPos = (9-sep*Double(boardArray[index].count))
-                                //                            }
                             }
                         }
                         else {
                             if self.boardArray[index].contains(where: {$0 < 16}) {
                                 self.addToRail(node: self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!], index: index, color: "white")
-                                //                            if index < 12 {
-                                //                                xPos = (-9+sep*Double(boardArray[index].count))
-                                //                            }
-                                //                            else {
-                                //                                xPos = (9-sep*Double(boardArray[index].count))
-                                //                            }
                             }
                         }
                     }
@@ -1840,15 +1826,15 @@ class BoardViewController: UIViewController {
                     var zPos = Double()
                     if index == -2 {
                         if self.whiteBench.count >= 10 {
-                            xPos = (-9+sep*Double(self.whiteBench.count-10))
+                            xPos = (9-sep*Double(self.whiteBench.count-10))
                             height = 1.5
                         }
                         else if self.whiteBench.count >= 5 {
-                            xPos = (-9+sep*Double(self.whiteBench.count-5))
+                            xPos = (9-sep*Double(self.whiteBench.count-5))
                             height = 1.0
                         }
                         else {
-                            xPos = (-9+sep*Double(self.whiteBench.count))
+                            xPos = (9-sep*Double(self.whiteBench.count))
                             height = 0.5
                         }
                         zPos = self.railPosition
@@ -1856,15 +1842,15 @@ class BoardViewController: UIViewController {
                     }
                     else if index == 25 {
                         if self.blackBench.count >= 10 {
-                            xPos = (9-sep*Double(self.blackBench.count-10))
+                            xPos = (-9+sep*Double(self.blackBench.count-10))
                             height = 1.5
                         }
                         else if self.blackBench.count >= 5 {
-                            xPos = (9-sep*Double(self.blackBench.count-5))
+                            xPos = (-9+sep*Double(self.blackBench.count-5))
                             height = 1.0
                         }
                         else {
-                            xPos = (9-sep*Double(self.blackBench.count))
+                            xPos = (-9+sep*Double(self.blackBench.count))
                             height = 0.5
                         }
                         zPos = self.railPosition
@@ -2159,9 +2145,9 @@ class BoardViewController: UIViewController {
                 
                 
             }
-            else if rec.state == .ended {
+            else if rec.state == .began {
                 print("debug: special case in long press")
-                self.debugLabel.text = "debug: this is a special case"
+                //self.debugLabel.text = "debug: this is a special case"
                 let sep : Double = 1.82
                 var xPos = Double()
                 let wSep = 2.0
@@ -2213,8 +2199,19 @@ class BoardViewController: UIViewController {
                 let actionMove = SCNAction.move(to: newPosition, duration: 0.3)
                 holdingNode!.runAction(actionMove)
                 self.holdingPiece = nil
+                self.holdingNode = nil
             }
             else {
+                if rec.state == .changed {
+                    print("c")
+                }
+                if rec.state == .possible {
+                    print("p")
+                }
+                if rec.state == .recognized {
+                    print("r")
+                }
+                print(rec.state)
 //                let actionMove = SCNAction.move(to: SCNVector3(position0.x, 4, position0.z), duration: 0.05)
 //                holdingNode!.runAction(actionMove)
 //                self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
@@ -2305,10 +2302,6 @@ class BoardViewController: UIViewController {
                     }
                     
                 }
-                else if rec.state == .ended {
-                    print("debug: this should never be called")
-                    self.debugLabel.text = "debug: this should never be called"
-                }
 //                else if rec.state == .ended {
 //                    //holdingNode!.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
 //                    self.holdingPiece = nil
@@ -2316,9 +2309,9 @@ class BoardViewController: UIViewController {
                 else {
                     //print("this also should never be called. rec state")
                     if holdingNode != nil {
-                        holdingNode!.runAction(actionMove)
+                        
                     }
-                    
+                    print("this is called when holdingpiece is nil but state is not began")
                 }
             }
             else {
@@ -2337,7 +2330,7 @@ class BoardViewController: UIViewController {
         
         var index = Int()
         if zPos > 16.4 {
-            index = xPos > 0 ? 25 : -2
+            index = xPos > 0 ? -2 : 25
         }
         else if zPos > 13.84 {
             index = xPos > 0 ? 23 : 0
@@ -2386,6 +2379,7 @@ class BoardViewController: UIViewController {
     
     func killInitialRoll() {
         ref?.remove()
+        ref = nil
     }
     
     func initialRoll () {
@@ -2600,13 +2594,14 @@ class BoardViewController: UIViewController {
         sceneView.scene = mainScene
         
         mainScene.physicsWorld.gravity.y = Float(-95.0)
+        mainScene.background.contents = UIImage(named: "table")
         
         sceneView.allowsCameraControl = false
         sceneView.autoenablesDefaultLighting = true
         
         cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
-        cameraNode.position = SCNVector3(0, 37.7, 0)
+        cameraNode.position = SCNVector3(0, 46, 0) //37.7
         cameraNode.rotation = SCNVector4(1, 0, 0, -1.57)
         mainScene.rootNode.addChildNode(cameraNode)
         
@@ -2803,7 +2798,6 @@ class BoardViewController: UIViewController {
         return diceList
     }
     
-    
     func settleDice (completion: @escaping () -> Void) {
         let oldPos0 = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
         let oldPos1 = self.mainScene.rootNode.childNodes[34].presentation.eulerAngles
@@ -2845,6 +2839,7 @@ class BoardViewController: UIViewController {
             let db = Firestore.firestore()
             db.collection("games").document(gameID).delete()
         }
+        cleanUp()
         if let vc = presentingViewController as? ViewController {
             vc.isReturning = true
         }
@@ -2853,7 +2848,25 @@ class BoardViewController: UIViewController {
         })
     }
     
-    
+    func cleanUp () {
+        for node in mainScene.rootNode.childNodes {
+            if node.geometry != nil {
+                node.geometry = nil
+            }
+            if node.physicsBody != nil {
+                node.physicsBody = nil
+            }
+            node.removeFromParentNode()
+        }
+        mainScene = nil
+        if ref != nil {
+            ref = nil
+        }
+        if ref1 != nil {
+            ref1?.remove()
+            ref1 = nil
+        }
+    }
 
     /*
     // MARK: - Navigation

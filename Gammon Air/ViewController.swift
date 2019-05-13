@@ -52,19 +52,30 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     
     var gameID = String()
     var hostObserver : ListenerRegistration? = nil
+    var joinObserver : ListenerRegistration? = nil
+    // TODO
+    // add joinObserver, set in viewdidload
+    // remove on seque
+    // remount in isReturning didSet
+    
+    // delete game when host quits app
+    
     var localIDs = [String]()
     var localNames = [String]()
     var shouldKill = false {
         didSet {
             self.hostObserver?.remove()
+            self.joinObserver?.remove()
         }
     }
     var isReturning = false {
         didSet {
             if isReturning == true {
-                self.joinTable.reloadData()
+                let db = Firestore.firestore()
+                setupJoinObserver()
+                isReturning = false
             }
-            isReturning = false
+            
         }
     }
     
@@ -126,7 +137,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         let joinReturnTap = UITapGestureRecognizer(target: self, action: #selector(joinReturnTapped))
         joinReturnButton.addGestureRecognizer(joinReturnTap)
         joinReturnButton.isUserInteractionEnabled = true
-   
+        
         hostNameField.delegate = self
         hostNameField.returnKeyType = .done
         
@@ -134,47 +145,81 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         joinTable.dataSource = self
         
         Auth.auth().signInAnonymously { (result, error) in
-            if let res = result {
-                print(res)
-                let db = Firestore.firestore()
-                db.collection("games").addSnapshotListener({ (snapshot, error) in
-                    if snapshot?.count == 0 {
-                        return
-                    }
-                    var IDList = [String]()
-                    for doc in snapshot!.documents {
-                        if (doc.data()["name"]) == nil {
-                            return
-                        }
-                        IDList.append(doc.documentID)
-                        if !self.localIDs.contains(doc.documentID) {
-                            self.localIDs.append(doc.documentID)
-                            self.localNames.append(doc.data()["name"] as! String)
-                            self.joinTable.insertRows(at: [IndexPath(row: self.localNames.count-1, section: 0)], with: .fade)
-                        }
-                    }
-                    for id in self.localIDs {
-                        if !IDList.contains(id) {
-                            let killIndex = self.localIDs.firstIndex(of: id)!
-                            self.localNames.remove(at: killIndex)
-                            self.localIDs.remove(at: killIndex)
-                            self.joinTable.deleteRows(at: [IndexPath(row: killIndex, section: 0)], with: .fade)
-                        }
-                    }
-                })
-                
+            if result != nil {
+                self.setupJoinObserver()
             }
             else {
                 print( error! )
             }
         }
-        
     }
     
+    
+    
     func dismissBoard() {
-        self.dismiss(animated: true) {
-            print("we back")
+        self.dismiss(animated: true)
+    }
+    
+    func hostGame (color: String) {
+        self.hostWaitingScreen.isHidden = false
+        UIView.animate(withDuration: 1, animations: {
+            self.hostWaitingScreen.alpha = 1
+        }) { (val) in
+            
         }
+        let db = Firestore.firestore()
+        var ref : DocumentReference? = nil
+        ref = db.collection("games").addDocument(data: [
+            "open" : true,
+            "hostColor" : color,
+            "name" : hostNameField.text!
+        ]) { (val) in
+            self.gameID = ref!.documentID
+            
+            self.hostObserver = db.collection("games").document(self.gameID).addSnapshotListener({ (snapshot, error) in
+                if snapshot?.data()?["open"] as? Bool != nil && snapshot?.data()?["open"] as! Bool == true {
+                    return
+                }
+                let vc = self.storyboard?.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
+                vc.gameID = self.gameID
+                vc.color = color
+                vc.isHost = true
+                self.present(vc, animated: true, completion: nil)
+                self.shouldKill = true
+            })
+        }
+    }
+    
+    func setupJoinObserver() {
+        let db = Firestore.firestore()
+        self.joinObserver = db.collection("games").addSnapshotListener({ (snapshot, error) in
+            if snapshot?.count == 0 {
+                return
+            }
+            var IDList = [String]()
+            for doc in snapshot!.documents {
+                if (doc.data()["name"]) == nil {
+                    return
+                }
+                if doc.data()["open"] as! Bool == false {
+                    continue
+                }
+                IDList.append(doc.documentID)
+                if !self.localIDs.contains(doc.documentID) {
+                    self.localIDs.append(doc.documentID)
+                    self.localNames.append(doc.data()["name"] as! String)
+                    self.joinTable.insertRows(at: [IndexPath(row: self.localNames.count-1, section: 0)], with: .fade)
+                }
+            }
+            for id in self.localIDs {
+                if !IDList.contains(id) {
+                    let killIndex = self.localIDs.firstIndex(of: id)!
+                    self.localNames.remove(at: killIndex)
+                    self.localIDs.remove(at: killIndex)
+                    self.joinTable.deleteRows(at: [IndexPath(row: killIndex, section: 0)], with: .fade)
+                }
+            }
+        })
     }
     
     @objc func hostRedTapped () {
@@ -182,33 +227,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             AudioServicesPlayAlertSound(SystemSoundID(kSystemSoundID_Vibrate))
             return
         }
-        self.hostWaitingScreen.isHidden = false
-        UIView.animate(withDuration: 1, animations: {
-            self.hostWaitingScreen.alpha = 1
-        }) { (val) in
-            
-        }
-        let db = Firestore.firestore()
-        var ref : DocumentReference? = nil
-        ref = db.collection("games").addDocument(data: [
-            "open" : true,
-            "hostColor" : "white",
-            "name" : hostNameField.text!
-        ]) { (val) in
-            self.gameID = ref!.documentID
-            
-            self.hostObserver = db.collection("games").document(self.gameID).addSnapshotListener({ (snapshot, error) in
-                if snapshot?.data()?["open"] as! Bool == true {
-                    return
-                }
-                let vc = self.storyboard?.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
-                vc.gameID = self.gameID
-                vc.color = "white"
-                vc.isHost = true
-                self.present(vc, animated: true, completion: nil)
-                self.shouldKill = true
-            })
-        }
+        hostGame(color: "white")
     }
     
     @objc func hostBlackTapped () {
@@ -216,33 +235,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             AudioServicesPlayAlertSound(SystemSoundID(kSystemSoundID_Vibrate))
             return
         }
-        self.hostWaitingScreen.isHidden = false
-        UIView.animate(withDuration: 1, animations: {
-            self.hostWaitingScreen.alpha = 1
-        }) { (val) in
-            
-        }
-        let db = Firestore.firestore()
-        var ref : DocumentReference? = nil
-        ref = db.collection("games").addDocument(data: [
-            "open" : true,
-            "hostColor" : "black",
-            "name" : hostNameField.text!
-        ]) { (val) in
-            self.gameID = ref!.documentID
-            
-            self.hostObserver = db.collection("games").document(self.gameID).addSnapshotListener({ (snapshot, error) in
-                if snapshot?.data()?["open"] as! Bool == true {
-                    return
-                }
-                let vc = self.storyboard?.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
-                vc.gameID = self.gameID
-                vc.color = "black"
-                vc.isHost = true
-                self.present(vc, animated: true, completion: nil)
-                self.shouldKill = true
-            })
-        }
+        hostGame(color: "black")
     }
     
     @objc func hostWaitingCancelTapped () {
@@ -263,7 +256,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             UIView.animate(withDuration: 0.3, delay: 0, options: [.curveLinear], animations: {
                 self.view.layoutIfNeeded()
             }) { (val) in
-                print("k")
+                
             }
             
         }
@@ -324,7 +317,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                     self.hostNameField.text = ""
                 }
             }
-            
+            self.hostNameField.isEmpty()
         }
         else {
             UIView.animate(withDuration: 0.7, animations: {
@@ -347,37 +340,20 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         return cell
     }
     
-    
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let id = (self.joinTable.cellForRow(at: indexPath) as! JoinTableViewCell).id
-//        db?.collection("games").document(id).getDocument { (snapshot, error) in
-//            var nextColor = String()
-//            var nextDice = Int.random(in: 1..<6)
-//            if nextDice > snapshot?.data()?["dice0"] as! Int {
-//                if snapshot?.data()?["hostColor"] as! String == "black" {
-//                    nextColor = "white"
-//                }
-//                else {
-//                    nextColor = "black"
-//                }
-//            }
-//            else {
-//                if snapshot?.data()?["hostColor"] as! String == "black" {
-//                    nextColor = "black"
-//                }
-//                else {
-//                    nextColor = "white"
-//                }
-//            }
-//
         self.db?.collection("games").document(id).setData([
             "open" : false
             ], merge: true)
         self.db?.collection("games").document(id).getDocument(completion: { (snapshot, error) in
+            self.joinObserver?.remove()
             let vc = self.storyboard?.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
             vc.gameID = id
-            if snapshot?.data()?["hostColor"] as! String == "white" {
+            if snapshot?.data()?["hostColor"] == nil {
+                self.joinTable.reloadData()
+                return
+            }
+            else if snapshot?.data()?["hostColor"] as! String == "white" {
                 vc.color = "black"
             }
             else {
@@ -386,17 +362,16 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             vc.isHost = false
             self.present(vc, animated: true, completion: nil)
         })
-        
-        
-            
-//        }
-        
-        
-        
-        
     }
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        print("yes")
+    
+//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+//        print("yes")
+//    }
+}
+
+extension UITextField {
+    func isEmpty () {
+        print()
     }
 }
 
