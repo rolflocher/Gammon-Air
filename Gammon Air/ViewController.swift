@@ -71,7 +71,6 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     var isReturning = false {
         didSet {
             if isReturning == true {
-                let db = Firestore.firestore()
                 setupJoinObserver()
                 isReturning = false
             }
@@ -152,8 +151,8 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                 print( error! )
             }
         }
+        
     }
-    
     
     
     func dismissBoard() {
@@ -167,16 +166,15 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         }) { (val) in
             
         }
-        let db = Firestore.firestore()
         var ref : DocumentReference? = nil
-        ref = db.collection("games").addDocument(data: [
+        ref = db?.collection("games").addDocument(data: [
             "open" : true,
             "hostColor" : color,
             "name" : hostNameField.text!
         ]) { (val) in
             self.gameID = ref!.documentID
             
-            self.hostObserver = db.collection("games").document(self.gameID).addSnapshotListener({ (snapshot, error) in
+            self.hostObserver = self.db?.collection("games").document(self.gameID).addSnapshotListener({ (snapshot, error) in
                 if snapshot?.data()?["open"] as? Bool != nil && snapshot?.data()?["open"] as! Bool == true {
                     return
                 }
@@ -191,8 +189,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     }
     
     func setupJoinObserver() {
-        let db = Firestore.firestore()
-        self.joinObserver = db.collection("games").addSnapshotListener({ (snapshot, error) in
+        self.joinObserver = db?.collection("games").addSnapshotListener({ (snapshot, error) in
             if snapshot?.count == 0 {
                 return
             }
@@ -244,9 +241,8 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         }) { (val) in
             self.hostWaitingScreen.isHidden = true
         }
-        let db = Firestore.firestore()
         self.hostObserver?.remove()
-        db.collection("games").document(gameID).delete()
+        db?.collection("games").document(gameID).delete()
         
     }
     
@@ -317,7 +313,6 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                     self.hostNameField.text = ""
                 }
             }
-            self.hostNameField.isEmpty()
         }
         else {
             UIView.animate(withDuration: 0.7, animations: {
@@ -364,9 +359,6 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         })
     }
     
-//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-//        print("yes")
-//    }
 }
 
 extension UITextField {

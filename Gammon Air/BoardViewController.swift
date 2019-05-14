@@ -55,6 +55,12 @@ class BoardViewController: UIViewController {
     
     @IBOutlet var winnerLabel: UILabel!
     
+    @IBOutlet var topInfoBar: UIView!
+    
+    @IBOutlet var turnBox: UIView!
+    
+    @IBOutlet var colorBox: UIView!
+    
     var mainScene : SCNScene!
     var cameraNode: SCNNode!
     
@@ -75,6 +81,12 @@ class BoardViewController: UIViewController {
         
         setupScene()
         
+        for view in [topInfoBar, turnBox, colorBox] {
+            view?.layer.cornerRadius = 10
+            view?.clipsToBounds = true
+        }
+        colorBox.backgroundColor = color == "white" ? #colorLiteral(red: 0.9689499736, green: 0.969111979, blue: 0.9689287543, alpha: 1) : #colorLiteral(red: 0.2550163865, green: 0.2550654411, blue: 0.2550099492, alpha: 1)
+        
         myDice = color == "white" ? "dice0" : "dice1"
         notMyDice = color != "white" ? "dice0" : "dice1"
         
@@ -94,6 +106,11 @@ class BoardViewController: UIViewController {
         let returnTap = UITapGestureRecognizer(target: self, action: #selector(returnTapped))
         returnButton.addGestureRecognizer(returnTap)
         returnButton.isUserInteractionEnabled = true
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationWillTerminate),
+                                               name: UIApplication.willTerminateNotification,
+                                               object: nil)
     }
     
     
@@ -102,6 +119,10 @@ class BoardViewController: UIViewController {
         self.boardArray = [[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[0],[11],[0],[0],[0],[10,9,8]]
     }
     
+    @objc func applicationWillTerminate() {
+        let db = Firestore.firestore()
+        db.collection("games").document(gameID).delete()
+    }
     
     func addToRail (node : SCNNode, index : Int, color : String) {
         
@@ -128,7 +149,14 @@ class BoardViewController: UIViewController {
             if snapshot?.data()?["turn"] == nil {
                 return
             }
-            print("is still observing")
+            else {
+                let white = #colorLiteral(red: 0.9689499736, green: 0.969111979, blue: 0.9689287543, alpha: 1)
+                let black = #colorLiteral(red: 0.2550163865, green: 0.2550654411, blue: 0.2550099492, alpha: 1)
+                UIView.animate(withDuration: 1, animations: {
+                    self.turnBox.backgroundColor = (snapshot?.data()?["turn"] as! String) == "white" ? white : black
+                })
+                
+            }
             if self.settingRoll {
                 self.settingRoll = false
                 return
@@ -2272,47 +2300,47 @@ class BoardViewController: UIViewController {
                 }
                 let position0 = hits.last!.worldCoordinates
                 let actionMove = SCNAction.move(to: SCNVector3(position0.x, 4, position0.z), duration: 0.1)
-                if rec.state == .began {
-                    if index == -1 { // white rail
-                        self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                        self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
-                        self.holdingPiece = index
-                        self.holdingNode = self.mainScene.rootNode.childNodes[1+self.whiteRail.last!]
-                        self.holdingName = self.whiteRail.last!
-                        self.whiteRail.removeLast()
-                        print("grab at white rail")
-                    }
-                    else if index == 24 { // black rail
-                        self.mainScene.rootNode.childNodes[1+self.blackRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                        self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove)
-                        self.holdingPiece = index
-                        self.holdingNode = self.mainScene.rootNode.childNodes[1+self.blackRail.last!]
-                        self.holdingName = self.blackRail.last!
-                        self.blackRail.removeLast()
-                        print("grab at black rail")
-                    }
-                    else {
-                        self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                        self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!].runAction(actionMove)
-                        self.holdingPiece = index
-                        self.holdingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!]
-                        self.holdingName = self.boardArray[index].last!
-                        self.boardArray[index].removeLast()
-                        print("grab at \(index)")
-                    }
-                    
+//                if rec.state == .began {
+                if index == -1 { // white rail
+                    self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                    self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
+                    self.holdingPiece = index
+                    self.holdingNode = self.mainScene.rootNode.childNodes[1+self.whiteRail.last!]
+                    self.holdingName = self.whiteRail.last!
+                    self.whiteRail.removeLast()
+                    print("grab at white rail")
                 }
+                else if index == 24 { // black rail
+                    self.mainScene.rootNode.childNodes[1+self.blackRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                    self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove)
+                    self.holdingPiece = index
+                    self.holdingNode = self.mainScene.rootNode.childNodes[1+self.blackRail.last!]
+                    self.holdingName = self.blackRail.last!
+                    self.blackRail.removeLast()
+                    print("grab at black rail")
+                }
+                else {
+                    self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                    self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!].runAction(actionMove)
+                    self.holdingPiece = index
+                    self.holdingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[index].last!]
+                    self.holdingName = self.boardArray[index].last!
+                    self.boardArray[index].removeLast()
+                    print("grab at \(index)")
+                }
+                    
+//                }
 //                else if rec.state == .ended {
 //                    //holdingNode!.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
 //                    self.holdingPiece = nil
 //                }
-                else {
-                    //print("this also should never be called. rec state")
-                    if holdingNode != nil {
-                        
-                    }
-                    print("this is called when holdingpiece is nil but state is not began")
-                }
+//                else {
+//                    //print("this also should never be called. rec state")
+//                    if holdingNode != nil {
+//                        
+//                    }
+//                    print("this is called when holdingpiece is nil but state is not began")
+//                }
             }
             else {
                 return
@@ -2461,62 +2489,6 @@ class BoardViewController: UIViewController {
                             self.myDice : [1]], merge: true)
                     }
                 })
-//                DispatchQueue.main.asyncAfter(deadline: .now()+6, execute: {
-//                    self.roll = self.getDice()
-//                    self.debugLabel.text = String(self.roll[0]) + String(self.roll[1])
-//                    if self.roll[self.color == "white" ? 0 : 1] > self.roll[self.color != "white" ? 0 : 1] {
-//                        if self.color == "white" {
-//                            print("u are white and you go first w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
-//                            self.db?.collection("games").document(self.gameID).setData([
-//                                "turn" : "white",
-//                                "dice0or" : [0],
-//                                "dice1or" : [0],], merge: true)
-//                            self.debugLabel.text = self.debugLabel.text! + "white turn, u go"
-//                            self.killInitialRoll()
-//                            self.afterRoll()
-//                        }
-//                        else {
-//                            print("u are black and you go first w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
-//                            self.db?.collection("games").document(self.gameID).setData([
-//                                "turn" : "black",
-//                                "dice0or" : [0],
-//                                "dice1or" : [0],], merge: true)
-//                            self.debugLabel.text = self.debugLabel.text! + "black turn, u go"
-//                            self.killInitialRoll()
-//                            self.afterRoll()
-//                        }
-//                    }
-//                    else if self.roll[self.color == "white" ? 0 : 1] < self.roll[self.color != "white" ? 0 : 1] {
-//                        if self.color == "white" {
-//                            print("u are white and you go after w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
-//                            self.db?.collection("games").document(self.gameID).setData([
-//                                "turn" : "black",
-//                                "dice0or" : [0],
-//                                "dice1or" : [0],], merge: true)
-//                            self.debugLabel.text = self.debugLabel.text! + "black turn, not u"
-//                            self.killInitialRoll()
-//                            self.afterRoll()
-//                            self.firstRollOver = true
-//                        }
-//                        else {
-//                            print("u are black and you go after w/ roll \(self.roll[self.color == "white" ? 0 : 1])")
-//                            self.db?.collection("games").document(self.gameID).setData([
-//                                "turn" : "white",
-//                                "dice0or" : [0],
-//                                "dice1or" : [0],], merge: true)
-//                            self.debugLabel.text = self.debugLabel.text! + "white turn, not u"
-//                            self.killInitialRoll()
-//                            self.afterRoll()
-//                            self.firstRollOver = true
-//                        }
-//
-//                    }
-//                    else {
-//                        self.db?.collection("games").document(self.gameID).setData([
-//                            self.myDice : [1]], merge: true)
-//                    }
-//
-//                })
             }
         })
     }
@@ -2545,11 +2517,6 @@ class BoardViewController: UIViewController {
             mainScene.rootNode.childNodes[33].removeFromParentNode()
         }
         
-//        if mainScene.rootNode.childNodes.count == 32 {
-//        var geometry:SCNGeometry
-//        geometry = SCNBox(width: 1.0, height: 1.0, length: 1.0, chamferRadius: 0.1)
-//        geometry.materials.first?.diffuse.contents = UIColor.cyan
-//        geometry.firstMaterial?.diffuse.contents = UIColor.cyan
         let geometryNode0 = SCNScene(named: "scnModels.scnassets/die.scn")!
         let geometryNode = geometryNode0.rootNode.childNodes.first!
         geometryNode.scale = SCNVector3(0.5, 0.5, 0.5)
@@ -2557,19 +2524,9 @@ class BoardViewController: UIViewController {
         geometryNode.position = dice0Position
         geometryNode.physicsBody?.applyForce(force, at: position, asImpulse: true)
         mainScene.rootNode.addChildNode(geometryNode)
-//        }
-//        else {
-//            mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(0, 0, 0)
-//            mainScene.rootNode.childNodes[33].position = dice0Position
-//            mainScene.rootNode.childNodes[33].physicsBody?.applyForce(force, at: position, asImpulse: true)
-//        }
-    
+        
         let force1 = dice1Ballistics[0]
         let position1 = dice1Ballistics[1]
-//        if mainScene.rootNode.childNodes.count == 33 {
-//        var geometry1:SCNGeometry
-//        geometry1 = SCNBox(width: 1.0, height: 1.0, length: 1.0, chamferRadius: 0.1)
-//        geometry1.materials.first?.diffuse.contents = UIColor.cyan
         let geometryNode10 = SCNScene(named: "scnModels.scnassets/die.scn")!
         let geometryNode1 = geometryNode10.rootNode.childNodes.first!
         geometryNode1.scale = SCNVector3(0.5, 0.5, 0.5)
@@ -2577,16 +2534,14 @@ class BoardViewController: UIViewController {
         geometryNode1.position = dice1Position
         geometryNode1.physicsBody?.applyForce(force1, at: position1, asImpulse: true)
         mainScene.rootNode.addChildNode(geometryNode1)
-//        }
-//        else {
-//            print("dice1 sees \(mainScene.rootNode.childNodes.count)")
-//            mainScene.rootNode.childNodes[34].eulerAngles = SCNVector3(0, 0, 0)
-//            mainScene.rootNode.childNodes[34].position = dice1Position
-//            mainScene.rootNode.childNodes[34].physicsBody?.applyForce(force1, at: position1, asImpulse: true)
-//        }
         
-        
-        
+//        var box0:SCNGeometry
+//        box0 = SCNBox(width: 5, height: 5, length: 5, chamferRadius: 0.0)
+//        box0.materials.first?.diffuse.contents = UIColor.red
+//        let box0Node0 = SCNNode(geometry: box0)
+//        box0Node0.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+//        box0Node0.position = SCNVector3(0, 10, 0) //22 32 0.05
+//        mainScene.rootNode.addChildNode(box0Node0)
     }
     
     func setupScene() {
@@ -2729,7 +2684,7 @@ class BoardViewController: UIViewController {
             mainScene.rootNode.addChildNode(p0n)
         }
         var box0:SCNGeometry
-        box0 = SCNBox(width: 22.0, height: 0.5, length: 40.0, chamferRadius: 0.05)
+        box0 = SCNBox(width: 32.0, height: 0.5, length: 60.0, chamferRadius: 0.05)
         box0.materials.first?.diffuse.contents = UIColor.clear
         let box0Node = SCNNode(geometry: box0)
         
@@ -2740,62 +2695,102 @@ class BoardViewController: UIViewController {
     }
     
     func getDice() -> [Int] {
-        var diceList = [Int]()
-        
+//        var diceList = [Int]()
+        var rollList = [Int]()
         for x in 33..<35 {//self.mainScene.rootNode.childNodes.count-2..<self.mainScene.rootNode.childNodes.count {
-            let angles = self.mainScene.rootNode.childNodes[x].presentation.eulerAngles
-            print(x)
+//            let angles = self.mainScene.rootNode.childNodes[x].presentation.eulerAngles
+            //let position = self.mainScene.rootNode.childNodes[x].presentation.position
+//            let location = CGPoint(x: 180, y: 400)
+//            mainScene.rootNode.childNodes[35].eulerAngles = mainScene.rootNode.childNodes[x].presentation.eulerAngles
+//            let hits = self.sceneView.hitTest(location, options: [SCNHitTestOption.searchMode: SCNHitTestSearchMode.closest.rawValue, SCNHitTestOption.backFaceCulling: true, SCNHitTestOption.firstFoundOnly: true])
+//            print("hittest geo index: \(hits.first!.geometryIndex)")
+//            print("hittest face index: \(hits.first!.faceIndex)")
+//            print("node world up: \(hits.first!.node.worldUp)")
+            //print("all objs: \(hits)")
+            //print("normal vector: \(hits.first!.)\n")
+            //print("worldcoords: \(hits.first!.worldCoordinates)")
+            //print("position: \(mainScene.rootNode.childNodes[35].position)")
+            //print("angles: \(mainScene.rootNode.childNodes[35].eulerAngles)\n")
+//            print("dice \(x-33) world up:")
+//            print(self.mainScene.rootNode.childNodes[x].presentation.worldUp)
+//            print(self.mainScene.rootNode.childNodes[x].presentation.worldFront)
+//            print(self.mainScene.rootNode.childNodes[x].presentation.worldRight)
+//            print()
+            let worldUp = self.mainScene.rootNode.childNodes[x].presentation.worldUp
+            if worldUp.y > 0.8 {
+                rollList.append(1)
+            }
+            else if worldUp.y < -0.8 {
+                rollList.append(6)
+            }
+            let worldFront = self.mainScene.rootNode.childNodes[x].presentation.worldFront
+            if worldFront.y > 0.8 {
+                rollList.append(3)
+            }
+            else if worldFront.y < -0.9 {
+                rollList.append(4)
+            }
+            let worldRight = self.mainScene.rootNode.childNodes[x].presentation.worldRight
+            if worldRight.y > 0.8 {
+                rollList.append(2)
+            }
+            if worldRight.y < -0.9 {
+                rollList.append(5)
+            }
             
-            if (angles.x > 3 || angles.x < -3) && (angles.z < -3 || angles.z > 3) {
-                diceList.append(1)
-            }
-            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x > -0.2 && angles.x < 0.2) {
-                diceList.append(1)
-            }
-                
-            else if (angles.y > 2.4 || angles.y < -2.6) && (angles.z < -1.35 && angles.z > -1.75) {
-                diceList.append(2)
-            }
-            else if (angles.y > -0.8 && angles.y < 0.9) && (angles.z > 1.35 && angles.z < 2.2) {
-                diceList.append(2)
-            }
-                
-            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x > 1.35 && angles.x < 1.75) { // 3s as 4
-                diceList.append(3)
-            }
-            else if (angles.z > 3 || angles.z < -3) && (angles.x < -1.35 && angles.x > -1.75) {
-                diceList.append(3)
-            }
-                
-            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x < -1.35 && angles.x > -1.75) {
-                diceList.append(4)
-            }
-            else if (angles.z > 2.6 || angles.z < -2.6) && (angles.x > 1.35 && angles.x < 1.75) {
-                diceList.append(4)
-            }
-                
-            else if (angles.y > -0.8 && angles.y < 0.9) && (angles.z < -1.35 && angles.z > -1.75) {
-                diceList.append(5)
-            }
-            else if (angles.y > 2.4 || angles.y < -2.6) && (angles.z > 1.35 && angles.z < 2.2) {
-                diceList.append(5)
-            }
-                
-            else if (angles.x < -3 || angles.x > 3) && angles.z > -0.2 && angles.z < 0.2 { // 3s have been 6s
-                diceList.append(6)
-            }
-            else if (angles.z < -3 || angles.z > 3) && (angles.x > -0.2 && angles.x < 0.2) {
-                diceList.append(6)
-            }
-                
-            else {
-                diceList.append(4)
-            }
+            
+//            if (angles.x > 3 || angles.x < -3) && (angles.z < -3 || angles.z > 3) {
+//                diceList.append(1)
+//            }
+//            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x > -0.2 && angles.x < 0.2) {
+//                diceList.append(1)
+//            }
+//
+//            else if (angles.y > 2.4 || angles.y < -2.6) && (angles.z < -1.35 && angles.z > -1.75) {
+//                diceList.append(2)
+//            }
+//            else if (angles.y > -0.8 && angles.y < 0.9) && (angles.z > 1.35 && angles.z < 2.2) {
+//                diceList.append(2)
+//            }
+//
+//            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x > 1.35 && angles.x < 1.75) { // 3s as 4
+//                diceList.append(3)
+//            }
+//            else if (angles.z > 3 || angles.z < -3) && (angles.x < -1.35 && angles.x > -1.75) {
+//                diceList.append(3)
+//            }
+//
+//            else if (angles.z > -0.2 && angles.z < 0.2) && (angles.x < -1.35 && angles.x > -1.75) {
+//                diceList.append(4)
+//            }
+//            else if (angles.z > 2.6 || angles.z < -2.6) && (angles.x > 1.35 && angles.x < 1.75) {
+//                diceList.append(4)
+//            }
+//
+//            else if (angles.y > -0.8 && angles.y < 0.9) && (angles.z < -1.35 && angles.z > -1.75) {
+//                diceList.append(5)
+//            }
+//            else if (angles.y > 2.4 || angles.y < -2.6) && (angles.z > 1.35 && angles.z < 2.2) {
+//                diceList.append(5)
+//            }
+//
+//            else if (angles.x < -3 || angles.x > 3) && angles.z > -0.2 && angles.z < 0.2 { // 3s have been 6s
+//                diceList.append(6)
+//            }
+//            else if (angles.z < -3 || angles.z > 3) && (angles.x > -0.2 && angles.x < 0.2) {
+//                diceList.append(6)
+//            }
+//
+//            else {
+//                diceList.append(4)
+//            }
         }
-        if diceList[0] == diceList[1] {
-            diceList.append(contentsOf: [diceList[0], diceList[1]])
+        //print(rollList)
+        //mainScene.rootNode.childNodes[35].removeFromParentNode()
+        if rollList[0] == rollList[1] {
+            rollList.append(contentsOf: [rollList[0], rollList[1]])
         }
-        return diceList
+        return rollList
     }
     
     func settleDice (completion: @escaping () -> Void) {
