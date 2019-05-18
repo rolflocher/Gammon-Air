@@ -171,6 +171,9 @@ class BoardViewController: UIViewController {
                 }
                 UIView.animate(withDuration: 1, animations: {
                     self.gameOverView.alpha = 1
+                    self.topInfoBar.alpha = 0
+                    self.turnBox.alpha = 0
+                    self.colorBox.alpha = 0
                 })
                 return
             }
