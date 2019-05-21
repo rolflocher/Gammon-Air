@@ -529,6 +529,7 @@
                     </view>
                     <connections>
                         <outlet property="colorBox" destination="B9S-Yb-19Q" id="Jqh-vJ-GA5"/>
+                        <outlet property="colorLabel" destination="Bjh-g1-gBN" id="hfX-cK-0ke"/>
                         <outlet property="debugLabel" destination="hmi-Jc-E1k" id="Qdx-yn-Go5"/>
                         <outlet property="gameOverView" destination="DuZ-TC-qQe" id="Ftc-2s-Z3K"/>
                         <outlet property="rematchButton" destination="BRY-8L-3If" id="4R6-Ma-2Ya"/>
@@ -536,6 +537,7 @@
                         <outlet property="sceneView" destination="tPh-HM-sB5" id="Een-xL-EXe"/>
                         <outlet property="topInfoBar" destination="Vn7-mC-mMs" id="EGC-fK-tXb"/>
                         <outlet property="turnBox" destination="7XR-2A-PQa" id="Jvb-14-5cR"/>
+                        <outlet property="turnLabel" destination="APf-9O-YVr" id="hMe-6j-IGk"/>
                         <outlet property="winnerLabel" destination="OcU-aV-6Ot" id="baR-gx-sI4"/>
                     </connections>
                 </viewController>

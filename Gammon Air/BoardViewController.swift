@@ -61,6 +61,10 @@ class BoardViewController: UIViewController {
     
     @IBOutlet var colorBox: UIView!
     
+    @IBOutlet var turnLabel: UILabel!
+    
+    @IBOutlet var colorLabel: UILabel!
+    
     var mainScene : SCNScene!
     var cameraNode: SCNNode!
     
@@ -163,38 +167,32 @@ class BoardViewController: UIViewController {
             }
             
             if let winner = snapshot?.data()?["winner"] as? String {
-                if winner == self.color {
-                    self.winnerLabel.text = "You Won!"
-                }
-                else {
-                    self.winnerLabel.text = "You Lost!"
-                }
+                self.winnerLabel.text = winner == self.color ? "You Won!" : "You Lost!"
                 UIView.animate(withDuration: 1, animations: {
                     self.gameOverView.alpha = 1
                     self.topInfoBar.alpha = 0
                     self.turnBox.alpha = 0
                     self.colorBox.alpha = 0
+                    self.turnLabel.alpha = 0
+                    self.colorLabel.alpha = 0
                 })
                 return
             }
             
             let dice0or = snapshot?.data()?["dice0or"] as! [Double]
             let dice1or = snapshot?.data()?["dice1or"] as! [Double]
-            if snapshot?.data()?["turn"] as! String != self.color && dice0or.count != 1 {
-                self.mainScene.rootNode.childNodes[33].position = self.mainScene.rootNode.childNodes[33].presentation.position
-                self.mainScene.rootNode.childNodes[34].position = self.mainScene.rootNode.childNodes[34].presentation.position
-                self.mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(dice0or[0], dice0or[1], dice0or[2])
-                self.mainScene.rootNode.childNodes[34].eulerAngles = SCNVector3(dice1or[0], dice1or[1], dice1or[2])
-                return
-            }
-            
-            if snapshot?.data()?["turn"] as! String != self.color && snapshot?.data()?["isFirst"] != nil {
-                let vector0 = snapshot?.data()?["dice0"] as! [Float]
-                let vector1 = snapshot?.data()?["dice1"] as! [Float]
-                self.throwDice(initial: false, spectating: true, dice0Ballistics: [SCNVector3(vector0[0], vector0[1], vector0[2]), SCNVector3(vector0[3], vector0[4], vector0[5])], dice1Ballistics: [SCNVector3(vector1[0], vector1[1], vector1[2]), SCNVector3(vector1[3], vector1[4], vector1[5])])
-                return
-            }
-            else if snapshot?.data()?["turn"] as! String != self.color {
+            if snapshot?.data()?["turn"] as! String != self.color {
+                if dice0or.count != 1 {
+                    self.mainScene.rootNode.childNodes[33].position = self.mainScene.rootNode.childNodes[33].presentation.position
+                    self.mainScene.rootNode.childNodes[34].position = self.mainScene.rootNode.childNodes[34].presentation.position
+                    self.mainScene.rootNode.childNodes[33].eulerAngles = SCNVector3(dice0or[0], dice0or[1], dice0or[2])
+                    self.mainScene.rootNode.childNodes[34].eulerAngles = SCNVector3(dice1or[0], dice1or[1], dice1or[2])
+                }
+                else if snapshot?.data()?["isFirst"] != nil {
+                    let vector0 = snapshot?.data()?["dice0"] as! [Float]
+                    let vector1 = snapshot?.data()?["dice1"] as! [Float]
+                    self.throwDice(initial: false, spectating: true, dice0Ballistics: [SCNVector3(vector0[0], vector0[1], vector0[2]), SCNVector3(vector0[3], vector0[4], vector0[5])], dice1Ballistics: [SCNVector3(vector1[0], vector1[1], vector1[2]), SCNVector3(vector1[3], vector1[4], vector1[5])])
+                }
                 return
             }
             
@@ -529,10 +527,6 @@ class BoardViewController: UIViewController {
                             self.boardArray[move0[0]].removeLast()
                         })
                     }
-                    
-                    //print("dice0 old pos: \(position00)")
-                    
-                    
                 }
                 if move1.count != 1 {
                     delay += 1.5
@@ -1494,15 +1488,14 @@ class BoardViewController: UIViewController {
                     let position = SCNVector3(x: Float.random(in: -0.5..<0.5), y: Float.random(in: -0.5..<0.5), z: Float.random(in: -0.5..<0.5))
                     let force0 = SCNVector3(x: self.color == "white" ? 12 : -12, y: 2 , z: Float.random(in: 0..<0.5))
                     let position0 = SCNVector3(x: Float.random(in: -0.5..<0.5), y: Float.random(in: -0.5..<0.5), z: Float.random(in: -0.5..<0.5))
+                    self.settingRoll = true
                     self.db?.collection("games").document(self.gameID).setData([
                         "dice0" : [force.x, force.y, force.z, position.x, position.y, position.z],
                         "dice1" : [force0.x, force0.y, force0.z, position0.x, position0.y, position0.z],
                         ], merge: true)
-                    self.settingRoll = true
+                    
                     self.throwDice(initial: false, spectating: false, dice0Ballistics: [force, position], dice1Ballistics: [force0, position0])
                     self.settleDice {
-                        //let roll0 = self.getDice()
-                        //print("settleDice says roll is : \(roll0[0]), \(roll0[1])")
                         self.roll = self.getDice()
                         let angles = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
                         let angles0 = self.mainScene.rootNode.childNodes[34].presentation.eulerAngles
@@ -1563,9 +1556,6 @@ class BoardViewController: UIViewController {
                                     }
                                 }
                             }
-                            
-                            
-                            
                             if self.whiteRail.count != 0 {
                                 self.moves.removeAll()
                                 if self.boardArray[self.roll[0]-1].contains(where: {$0 < 16}) || self.boardArray[self.roll[0]-1].count <= 1 {
@@ -1576,8 +1566,7 @@ class BoardViewController: UIViewController {
                                 }
                             }
                             if self.moves.count == 0 {
-                                //                            if self.usedMoves.count == 0 {
-                                self.settingRoll = true
+                                //self.settingRoll = true
                                 self.db?.collection("games").document(self.gameID).setData([
                                     "turn" : self.notMyColor,
                                     "isFirst" : false,
@@ -2066,7 +2055,7 @@ class BoardViewController: UIViewController {
                         self.canMove = false // tell backend that turn is over ##################
                         self.holdingPiece = nil
                         if self.usedMoves.count == 1 {
-                            self.settingRoll = true
+                            //self.settingRoll = true
                             self.db?.collection("games").document(self.gameID).setData([
                                 "turn" : notMyColor,
                                 "isFirst" : false,
@@ -2177,7 +2166,7 @@ class BoardViewController: UIViewController {
                 
             }
             else if rec.state == .began {
-                print("debug: special case in long press")
+                //print("debug: special case in long press")
                 //self.debugLabel.text = "debug: this is a special case"
                 let sep : Double = 1.82
                 var xPos = Double()
@@ -2233,16 +2222,16 @@ class BoardViewController: UIViewController {
                 self.holdingNode = nil
             }
             else {
-                if rec.state == .changed {
-                    print("c")
-                }
-                if rec.state == .possible {
-                    print("p")
-                }
-                if rec.state == .recognized {
-                    print("r")
-                }
-                print(rec.state)
+//                if rec.state == .changed {
+//                    print("c")
+//                }
+//                if rec.state == .possible {
+//                    print("p")
+//                }
+//                if rec.state == .recognized {
+//                    print("r")
+//                }
+//                print(rec.state)
 //                let actionMove = SCNAction.move(to: SCNVector3(position0.x, 4, position0.z), duration: 0.05)
 //                holdingNode!.runAction(actionMove)
 //                self.mainScene.rootNode.childNodes[1+self.boardArray[holdingPiece!].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
@@ -2261,7 +2250,7 @@ class BoardViewController: UIViewController {
                 let xPos = hits.last!.worldCoordinates.x//tappedNode.position.x
                 
                 let index = getBoardIndex(x: xPos, z: zPos)
-                print("first grab thinks pos is: \(zPos)")
+                //print("first grab thinks pos is: \(zPos)")
                 
                 if index == -5 { // getBoardIndex returning null
                     return
@@ -2556,6 +2545,7 @@ class BoardViewController: UIViewController {
         
         sceneView.allowsCameraControl = false
         sceneView.autoenablesDefaultLighting = true
+        sceneView.preferredFramesPerSecond = 30
         
         cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
@@ -2566,6 +2556,7 @@ class BoardViewController: UIViewController {
         var board:SCNGeometry
         board = SCNBox(width: 22.0, height: 0.5, length: 32.0, chamferRadius: 0.05)
         board.materials.first?.diffuse.contents = UIImage(named: "board.jpg")
+        //board.levelsOfDetail = [SCNLevelOfDetail(geometry: board, screenSpaceRadius: 100)]
         let boardNode = SCNNode(geometry: board)
         
         boardNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
@@ -2719,28 +2710,50 @@ class BoardViewController: UIViewController {
 //            print(self.mainScene.rootNode.childNodes[x].presentation.worldFront)
 //            print(self.mainScene.rootNode.childNodes[x].presentation.worldRight)
 //            print()
-            let worldUp = self.mainScene.rootNode.childNodes[x].presentation.worldUp
-            if worldUp.y > 0.8 {
-                rollList.append(1)
-            }
-            else if worldUp.y < -0.8 {
-                rollList.append(6)
-            }
-            let worldFront = self.mainScene.rootNode.childNodes[x].presentation.worldFront
-            if worldFront.y > 0.8 {
-                rollList.append(3)
-            }
-            else if worldFront.y < -0.9 {
-                rollList.append(4)
-            }
-            let worldRight = self.mainScene.rootNode.childNodes[x].presentation.worldRight
-            if worldRight.y > 0.8 {
-                rollList.append(2)
-            }
-            if worldRight.y < -0.9 {
-                rollList.append(5)
-            }
             
+//            let worldUp = self.mainScene.rootNode.childNodes[x].presentation.worldUp
+//            if worldUp.y > 0.8 {
+//                rollList.append(1)
+//            }
+//            else if worldUp.y < -0.8 {
+//                rollList.append(6)
+//            }
+//            let worldFront = self.mainScene.rootNode.childNodes[x].presentation.worldFront
+//            if worldFront.y > 0.8 {
+//                rollList.append(3)
+//            }
+//            else if worldFront.y < -0.9 {
+//                rollList.append(4)
+//            }
+//            let worldRight = self.mainScene.rootNode.childNodes[x].presentation.worldRight
+//            if worldRight.y > 0.8 {
+//                rollList.append(2)
+//            }
+//            if worldRight.y < -0.9 {
+//                rollList.append(5)
+//            }
+            
+            let worldUp = self.mainScene.rootNode.childNodes[x].presentation.worldUp
+            let worldFront = self.mainScene.rootNode.childNodes[x].presentation.worldFront
+            let worldRight = self.mainScene.rootNode.childNodes[x].presentation.worldRight
+            let worldVals = [worldUp.y, abs(worldUp.y), worldFront.y, abs(worldFront.y), worldRight.y, abs(worldRight.y)]
+            let worldValsMax = worldVals.max()
+            switch (worldVals.firstIndex(where: {$0 == worldValsMax})) {
+            case 0 :
+                rollList.append(1)
+            case 1 :
+                rollList.append(6)
+            case 2 :
+                rollList.append(3)
+            case 3 :
+                rollList.append(4)
+            case 4 :
+                rollList.append(2)
+            case 5 :
+                rollList.append(5)
+            default :
+                rollList.append(90)
+            }
             
 //            if (angles.x > 3 || angles.x < -3) && (angles.z < -3 || angles.z > 3) {
 //                diceList.append(1)
@@ -2803,28 +2816,20 @@ class BoardViewController: UIViewController {
             let newPos0 = self.mainScene.rootNode.childNodes[33].presentation.eulerAngles
             let newPos1 = self.mainScene.rootNode.childNodes[34].presentation.eulerAngles
             let minInt : Float = 0.5
-            print("\n")
-            print(self.mainScene.rootNode.childNodes.count)
-            print("\(oldPos0) - \(newPos0)")
-            print("\(oldPos1) - \(newPos1)")
-            print(self.mainScene.rootNode.childNodes[33])
-            print("\n")
-            print(self.mainScene.rootNode.childNodes[34])
-            print("\n")
             if (abs(oldPos0.x-newPos0.x) < minInt) && (abs(oldPos0.y-newPos0.y) < minInt) && (abs(oldPos0.z-newPos0.z) < minInt) {
                 if  (abs(oldPos1.x-newPos1.x) < minInt) && (abs(oldPos1.y-newPos1.y) < minInt) && (abs(oldPos1.z-newPos1.z) < minInt) {
                     print("sent completion")
                     completion()
                 }
                 else {
-                    print("trying again")
+                    //print("trying again")
                     self.settleDice {
                         completion()
                     }
                 }
             }
             else {
-                print("trying again")
+                //print("trying again")
                 self.settleDice {
                     completion()
                 }

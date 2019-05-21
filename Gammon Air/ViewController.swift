@@ -196,7 +196,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             var IDList = [String]()
             for doc in snapshot!.documents {
                 if (doc.data()["name"]) == nil {
-                    return
+                    continue
                 }
                 if doc.data()["open"] as! Bool == false {
                     continue
