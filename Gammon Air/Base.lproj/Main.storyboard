@@ -119,7 +119,7 @@
                                     <visualEffectView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="tlr-un-EU7">
                                         <rect key="frame" x="376.66666666666669" y="97" width="266.00000000000006" height="65"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" id="0Vb-ud-mDf">
-                                            <rect key="frame" x="0.0" y="0.0" width="266.00000000000006" height="65"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="266" height="65"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Join Online" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eO5-q1-4L4">
@@ -143,7 +143,7 @@
                                     <visualEffectView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="iyz-La-xrE">
                                         <rect key="frame" x="376.66666666666669" y="0.0" width="266.00000000000006" height="65"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" id="pvF-DR-hez">
-                                            <rect key="frame" x="0.0" y="0.0" width="266.00000000000006" height="65"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="266" height="65"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Host Game" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jDr-xX-VbJ">
@@ -167,7 +167,7 @@
                                     <visualEffectView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Uoc-WB-bPr">
                                         <rect key="frame" x="376.66666666666669" y="194" width="266.00000000000006" height="65"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" id="OHp-PF-ZBW">
-                                            <rect key="frame" x="0.0" y="0.0" width="266.00000000000006" height="65"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="266" height="65"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Play Computer" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="28l-RY-j0D">
