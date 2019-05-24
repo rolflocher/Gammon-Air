@@ -37,6 +37,7 @@ class BoardViewController: UIViewController {
     var firstRollOver = false
     var settingRoll = false
     var usedMoves = [[Int]]()
+    var takenPieceBuffer = [Bool]()
     var canUndo = false {
         didSet {
             if canUndo == true {
@@ -140,6 +141,53 @@ class BoardViewController: UIViewController {
                                                object: nil)
     }
     
+    func unmoveFromRailTo(index: Int) {
+        var xPos = Double()
+        var height = Double()
+        let sep : Double = 1.82
+        if index < 12 {
+            if self.boardArray[index].count >= 10 {
+                xPos = (-9+sep*Double(self.boardArray[index].count-10))
+                height = 1.5
+            }
+            else if self.boardArray[index].count >= 5 {
+                xPos = (-9+sep*Double(self.boardArray[index].count-5))
+                height = 1.0
+            }
+            else {
+                xPos = (-9+sep*Double(self.boardArray[index].count))
+                height = 0.5
+            }
+            
+        }
+        else {
+            if self.boardArray[index].count >= 10 {
+                xPos = (9-sep*Double(self.boardArray[index].count-10))
+                height = 1.5
+            }
+            else if self.boardArray[index].count >= 5 {
+                xPos = (9-sep*Double(self.boardArray[index].count-5))
+                height = 1.0
+            }
+            else {
+                xPos = (9-sep*Double(self.boardArray[index].count))
+                height = 0.5
+            }
+        }
+        if color == "white" {
+            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[index]), duration: 0.3)
+            self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove1)
+            self.boardArray[index].append(self.blackRail.last!)
+            self.blackRail.removeLast()
+        }
+        else {
+            let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[index]), duration: 0.3)
+            self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
+            self.boardArray[index].append(self.whiteRail.last!)
+            self.whiteRail.removeLast()
+        }
+    }
+    
     @objc func undoTapped () {
         if !canUndo {
             return
@@ -147,20 +195,25 @@ class BoardViewController: UIViewController {
         roll = rollBuf
         shouldTake = false
         var delay = 0.0
-        for move in usedMoves.reversed() {
-            movePiece(move: move.reversed(), delay: delay)
+        for x in 0..<usedMoves.count {
+            movePiece(move: usedMoves.reversed()[x].reversed(), delay: delay)
+            if takenPieceBuffer[x] == true {
+                DispatchQueue.main.asyncAfter(deadline: .now()+delay) {
+                    self.unmoveFromRailTo(index: self.usedMoves.reversed()[x][1])
+                }
+                
+            }
             delay += 1.5
         }
-        usedMoves.removeAll()
-        view.isUserInteractionEnabled = false
-        DispatchQueue.main.asyncAfter(deadline: .now()+delay) {
-            self.view.isUserInteractionEnabled = true
-        }
         
+        view.isUserInteractionEnabled = false
         canUndo = false
         DispatchQueue.main.asyncAfter(deadline: .now()+delay) {
+            self.view.isUserInteractionEnabled = true
+            self.usedMoves.removeAll()
             self.shouldTake = true
             self.getMoves()
+            self.takenPieceBuffer.removeAll()
         }
     }
     
@@ -168,6 +221,7 @@ class BoardViewController: UIViewController {
         let sep : Double = 1.82
         let wSep = 2.0
         var position00 = SCNVector3()
+        var movingNode = SCNNode()
         DispatchQueue.main.asyncAfter(deadline: .now()+delay) {
             if move[0] == -2 {
                 position00 = self.mainScene.rootNode.childNodes[1+self.whiteBench.last!].presentation.position
@@ -573,6 +627,7 @@ class BoardViewController: UIViewController {
                 })
             }
             else if move[1] == -1 {
+                movingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!]
                 position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
                 self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
@@ -637,13 +692,15 @@ class BoardViewController: UIViewController {
                 })
             }
             else {
-                position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove)
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
                 let name = self.boardArray[move[0]].last!
                 var xPos = Double()
                 var height = Double()
+                self.boardArray[move[0]].removeLast()
                 if move[1] < 12 {
                     if self.boardArray[move[1]].count >= 10 {
                         xPos = (-9+sep*Double(self.boardArray[move[1]].count-10))
@@ -698,7 +755,7 @@ class BoardViewController: UIViewController {
                 
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
@@ -716,9 +773,9 @@ class BoardViewController: UIViewController {
                     }
                     
                     let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.boardArray[move[1]].append(name)
-                    self.boardArray[move[0]].removeLast()
+                    
                 })
             }
         }
@@ -894,6 +951,10 @@ class BoardViewController: UIViewController {
             wSep = -2.0
             position = SCNVector3(wSep*Double(self.blackRail.count), 0.5, 0.3)
         }
+        if canMove {
+            takenPieceBuffer[usedMoves.count] = true
+        }
+        
         print("addToRail position: \(position)")
         let actionMove1 = SCNAction.move(to: position, duration: 0.3)
         node.runAction(actionMove1)
@@ -1173,6 +1234,7 @@ class BoardViewController: UIViewController {
                     let sep : Double = 1.82
                     var xPos = Double()
                     var height = Double()
+                    takenPieceBuffer.append(false)
                     
                     if index != -2 && index != 25 {
                         if self.color == "white" {
