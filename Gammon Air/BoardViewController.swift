@@ -40,13 +40,22 @@ class BoardViewController: UIViewController {
     var takenPieceBuffer = [Bool]()
     var canUndo = false {
         didSet {
-            if canUndo == true {
-                undoButton.isHidden = false
-                undoLabel.isHidden = false
+            if self.canUndo == true {
+                self.undoButton.isHidden = false
+                self.undoLabel.isHidden = false
+                UIView.animate(withDuration: 0.7) {
+                    self.undoButton.alpha = 1
+                    self.undoLabel.alpha = 1
+                }
             }
             else {
-                undoButton.isHidden = true
-                undoLabel.isHidden = true
+                UIView.animate(withDuration: 0.7, animations: {
+                    self.undoButton.alpha = 0
+                    self.undoLabel.alpha = 0
+                }) { (val) in
+                    self.undoButton.isHidden = true
+                    self.undoLabel.isHidden = true
+                }
             }
         }
     }
@@ -134,6 +143,11 @@ class BoardViewController: UIViewController {
         let undoTap = UITapGestureRecognizer(target: self, action: #selector(undoTapped))
         undoButton.addGestureRecognizer(undoTap)
         undoButton.isUserInteractionEnabled = true
+        
+        undoButton.layer.cornerRadius = 10.0
+        undoButton.clipsToBounds = true
+        returnButton.layer.cornerRadius = 10.0
+        returnButton.clipsToBounds = true
         
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(applicationWillTerminate),
@@ -224,11 +238,12 @@ class BoardViewController: UIViewController {
         var movingNode = SCNNode()
         DispatchQueue.main.asyncAfter(deadline: .now()+delay) {
             if move[0] == -2 {
-                position00 = self.mainScene.rootNode.childNodes[1+self.whiteBench.last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.whiteBench.last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove)
-                let name = self.boardArray[move[0]].last!
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
+                let name = self.whiteBench.last!
                 var xPos = Double()
                 var height = Double()
                 if move[1] < 12 {
@@ -285,7 +300,7 @@ class BoardViewController: UIViewController {
                 
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
@@ -303,17 +318,18 @@ class BoardViewController: UIViewController {
                     }
                     
                     let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.boardArray[move[1]].append(name)
-                    self.boardArray[move[0]].removeLast()
+                    self.whiteBench.removeLast()
                 })
             }
             else if move[0] == 25 {
-                position00 = self.mainScene.rootNode.childNodes[1+self.blackBench.last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.blackBench.last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove)
-                let name = self.boardArray[move[0]].last!
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
+                let name = self.blackBench.last!
                 var xPos = Double()
                 var height = Double()
                 if move[1] < 12 {
@@ -370,7 +386,7 @@ class BoardViewController: UIViewController {
                 
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
@@ -388,16 +404,17 @@ class BoardViewController: UIViewController {
                     }
                     
                     let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.boardArray[move[1]].append(name)
-                    self.boardArray[move[0]].removeLast()
+                    self.blackBench.removeLast()
                 })
             }
             else if move[0] == -1 {
-                position00 = self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.whiteRail.last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove)
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
                 let name = self.whiteRail.last!
                 var xPos = Double()
                 var height = Double()
@@ -454,7 +471,7 @@ class BoardViewController: UIViewController {
                 
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
                     if !self.canUndo {
@@ -471,16 +488,17 @@ class BoardViewController: UIViewController {
                     }
                     
                     let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.whiteRail.last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.boardArray[move[1]].append(name)
                     self.whiteRail.removeLast()
                 })
             }
             else if move[0] == 24 {
-                position00 = self.mainScene.rootNode.childNodes[1+self.blackRail.last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.blackRail.last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.blackRail.last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove)
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
                 let name = self.blackRail.last!
                 var xPos = Double()
                 var height = Double()
@@ -536,13 +554,11 @@ class BoardViewController: UIViewController {
                 }
                 
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
-                    //print("dice0 new pos: \(SCNVector3(xPos, 4, self.position[move[1]]))")
                     let actionmove = SCNAction.move(to: SCNVector3(xPos, 4, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
-                    //self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
                     if self.shouldTake {
                         if self.color == "white" {
                             if self.boardArray[move[1]].contains(where: {$0 < 16}) {
@@ -557,16 +573,17 @@ class BoardViewController: UIViewController {
                     }
                     
                     let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.position[move[1]]), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.blackRail.last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.boardArray[move[1]].append(name)
                     self.blackRail.removeLast()
                 })
             }
             else if move[1] == -2 {
-                position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove)
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
                 let name = self.boardArray[move[0]].last!
                 var xPos = Double()
                 var height = Double()
@@ -584,21 +601,22 @@ class BoardViewController: UIViewController {
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
                     let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.whiteBench.append(name)
                     self.boardArray[move[0]].removeLast()
                 })
             }
             else if move[1] == 25 {
-                position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove)
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
                 let name = self.boardArray[move[0]].last!
                 var xPos = Double()
                 var height = Double()
@@ -616,27 +634,27 @@ class BoardViewController: UIViewController {
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(xPos, 4, self.railPosition), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
                     let actionMove1 = SCNAction.move(to: SCNVector3(xPos, height, self.railPosition), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.blackBench.append(name)
                     self.boardArray[move[0]].removeLast()
                 })
             }
             else if move[1] == -1 {
                 movingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!]
-                position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].presentation.position
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove)
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
                 let name = self.boardArray[move[0]].last!
                 
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(wSep*Double(self.whiteRail.count+1), 4, 0.3), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
@@ -654,21 +672,22 @@ class BoardViewController: UIViewController {
                     }
                     
                     let actionMove1 = SCNAction.move(to: SCNVector3(wSep*Double(self.whiteRail.count+1), 0.5, 0.3), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.whiteRail.append(name)
                     self.boardArray[move[0]].removeLast()
                 })
             }
             else if move[1] == 24 {
-                position00 = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].presentation.position
+                movingNode = self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!]
+                position00 = movingNode.presentation.position
                 let actionMove = SCNAction.move(to: SCNVector3(position00.x, 4, position00.z), duration: 0.3)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].physicsBody = SCNPhysicsBody(type: .static, shape: nil)
-                self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove)
+                movingNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+                movingNode.runAction(actionMove)
                 let name = self.boardArray[move[0]].last!
                 
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.5, execute: {
                     let actionmove = SCNAction.move(to: SCNVector3(-wSep*Double(self.blackRail.count+1), 4, 0.3), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionmove)
+                    movingNode.runAction(actionmove)
                     
                 })
                 DispatchQueue.main.asyncAfter(deadline: .now()+1, execute: {
@@ -686,7 +705,7 @@ class BoardViewController: UIViewController {
                     }
                     
                     let actionMove1 = SCNAction.move(to: SCNVector3(-wSep*Double(self.blackRail.count+1), 0.5, 0.3), duration: 0.3)
-                    self.mainScene.rootNode.childNodes[1+self.boardArray[move[0]].last!].runAction(actionMove1)
+                    movingNode.runAction(actionMove1)
                     self.blackRail.append(name)
                     self.boardArray[move[0]].removeLast()
                 })
