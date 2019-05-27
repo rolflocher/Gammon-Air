@@ -9,12 +9,13 @@
 import UIKit
 import AudioToolbox
 import Firebase
+import ContactsUI
 
 protocol HomeScreenDelegate : class {
     // unused
 }
 
-class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource, BoardViewDelegate {
+class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource, BoardViewDelegate, CNContactPickerDelegate {
     
     @IBOutlet var hostButton: UIVisualEffectView!
     
@@ -50,15 +51,10 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     
     var db : Firestore? = nil
     
+    var uid = String()
     var gameID = String()
     var hostObserver : ListenerRegistration? = nil
     var joinObserver : ListenerRegistration? = nil
-    // TODO
-    // add joinObserver, set in viewdidload
-    // remove on seque
-    // remount in isReturning didSet
-    
-    // delete game when host quits app
     
     var localIDs = [String]()
     var localNames = [String]()
@@ -144,23 +140,83 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         joinTable.dataSource = self
         
         Auth.auth().signInAnonymously { (result, error) in
-            if result != nil {
+            if let data = result {
+                self.uid = data.user.uid
+                //self.checkForPreviousGame()
                 self.setupJoinObserver()
             }
             else {
                 print( error! )
             }
         }
+        let settings = FirestoreSettings()
+        settings.isPersistenceEnabled = false
+        
+        let db = Firestore.firestore()
+        db.settings = settings
         
     }
     
+    @objc func compTapped() {
+        let contactPicker = CNContactPickerViewController()
+        contactPicker.delegate = self
+        self.present(contactPicker, animated: true, completion: nil)
+    }
+    
+    func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
+        print("contact name: \(contact.givenName)")
+        
+        let url = URL(string: "https://us-central1-gammon-air.cloudfunctions.net/sendPush")!
+        var request = URLRequest(url:url)
+        request.httpBody = "Café".data(using: .utf8)
+        let session = URLSession(configuration: URLSessionConfiguration.default)
+        let task = session.dataTask(with: request, completionHandler: {data, response, error -> Void in
+            
+        })
+        task.resume()
+    }
+    
+    func checkForPreviousGame() {
+        db?.collection("activeGames").document(self.uid).getDocument(completion: { (snapshot, error) in
+            if let gameID = snapshot?.data()?["game"] as? String {
+                self.db?.collection("games").document(gameID).getDocument(completion: { (gameSnap, gameError) in
+                    if gameSnap?.data()?["turn"] as? String != nil {
+                        let vc = self.storyboard?.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
+                        vc.gameID = gameID
+                        vc.color = snapshot?.data()?["color"] as! String
+                        vc.isHost = (gameSnap?.data()?["hostColor"] as! String) == vc.color
+                        self.present(vc, animated: true, completion: nil)
+                        self.shouldKill = true
+                        return
+                    }
+                    else {
+                        //self.db?.collection("activeGames").document(self.uid).delete()
+                    }
+                })
+            }
+            else {
+                //self.db?.collection("activeGames").document(self.uid).delete()
+            }
+        })
+    }
     
     func dismissBoard() {
         self.dismiss(animated: true)
     }
     
+    func setJoinedGame(color : String) {
+        db?.collection("activeGames").document(self.uid).setData(["game": self.gameID, "color": color])
+    }
+    
     func hostGame (color: String) {
         self.hostWaitingScreen.isHidden = false
+        menuVertPan.constant = 0
+        UIView.animate(withDuration: 0.3, delay: 0, options: [.curveLinear], animations: {
+            self.view.layoutIfNeeded()
+        }) { (val) in
+            print("k")
+        }
+        hostNameField.resignFirstResponder()
         UIView.animate(withDuration: 1, animations: {
             self.hostWaitingScreen.alpha = 1
         }) { (val) in
@@ -183,6 +239,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                 vc.color = color
                 vc.isHost = true
                 self.present(vc, animated: true, completion: nil)
+                self.setJoinedGame(color: color)
                 self.shouldKill = true
             })
         }
@@ -285,10 +342,6 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         }
     }
     
-    @objc func compTapped() {
-        
-    }
-    
     @objc func joinReturnTapped() {
         UIView.animate(withDuration: 0.7, animations: {
             self.menuPan.constant = -325
@@ -354,6 +407,8 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             else {
                 vc.color = "white"
             }
+            self.gameID = id
+            self.setJoinedGame(color: vc.color)
             vc.isHost = false
             self.present(vc, animated: true, completion: nil)
         })

@@ -12,6 +12,7 @@
 		4C336DD42278C067005F5F6C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C336DD22278C067005F5F6C /* Main.storyboard */; };
 		4C336DD62278C069005F5F6C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C336DD52278C069005F5F6C /* Assets.xcassets */; };
 		4C336DD92278C069005F5F6C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C336DD72278C069005F5F6C /* LaunchScreen.storyboard */; };
+		4C3E6535229C3FB50016052C /* 2017.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4C3E6534229C3FB50016052C /* 2017.mp3 */; };
 		4C70DF902278F46B004C113E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4C70DF8F2278F46B004C113E /* GoogleService-Info.plist */; };
 		4C70DF9222791AC5004C113E /* JoinTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C70DF9122791AC5004C113E /* JoinTableViewCell.swift */; };
 		4C70DF94227924E8004C113E /* BoardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C70DF93227924E8004C113E /* BoardViewController.swift */; };
@@ -27,6 +28,7 @@
 		4C336DD52278C069005F5F6C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4C336DD82278C069005F5F6C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4C336DDA2278C069005F5F6C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4C3E6534229C3FB50016052C /* 2017.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 2017.mp3; sourceTree = "<group>"; };
 		4C70DF8F2278F46B004C113E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4C70DF9122791AC5004C113E /* JoinTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinTableViewCell.swift; sourceTree = "<group>"; };
 		4C70DF93227924E8004C113E /* BoardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewController.swift; sourceTree = "<group>"; };
@@ -92,6 +94,7 @@
 				4C7CD7C4227CDB6C00FC06C4 /* scnModels.scnassets */,
 				4C336DD22278C067005F5F6C /* Main.storyboard */,
 				4C70DF9122791AC5004C113E /* JoinTableViewCell.swift */,
+				4C3E6534229C3FB50016052C /* 2017.mp3 */,
 				4C336DD52278C069005F5F6C /* Assets.xcassets */,
 				4C336DD72278C069005F5F6C /* LaunchScreen.storyboard */,
 				4C336DDA2278C069005F5F6C /* Info.plist */,
@@ -160,6 +163,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C3E6535229C3FB50016052C /* 2017.mp3 in Resources */,
 				4C336DD92278C069005F5F6C /* LaunchScreen.storyboard in Resources */,
 				4C70DF902278F46B004C113E /* GoogleService-Info.plist in Resources */,
 				4C336DD62278C069005F5F6C /* Assets.xcassets in Resources */,
