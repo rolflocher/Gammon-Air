@@ -13,12 +13,29 @@ import Firebase
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-
+    var db : Firestore? = nil
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        
         FirebaseApp.configure()
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options:[.badge, .alert, .sound]) { (granted, error) in
+            // Enable or disable features based on authorization.
+        }
+        application.registerForRemoteNotifications()
+        
+        db = Firestore.firestore()
+        
         return true
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        
+        let deviceTokenString = deviceToken.reduce("", {$0 + String(format: "%02X", $1)})
+        
+        print(deviceTokenString)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -43,6 +60,78 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
         
         
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
+        // If you are receiving a notification message while your app is in the background,
+        // this callback will not be fired till the user taps on the notification launching the application.
+        // TODO: Handle data of notification
+        
+        // With swizzling disabled you must let Messaging know about the message, for Analytics
+        // Messaging.messaging().appDidReceiveMessage(userInfo)
+        
+        
+        
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        // If you are receiving a notification message while your app is in the background,
+        // this callback will not be fired till the user taps on the notification launching the application.
+        // TODO: Handle data of notification
+        
+        // With swizzling disabled you must let Messaging know about the message, for Analytics
+        // Messaging.messaging().appDidReceiveMessage(userInfo)
+        
+        // Print message ID.
+        print("Info: \(userInfo)")
+        let format0 = userInfo["aps"] as! [String:Any]
+        print(format0)
+        var color = format0["color"] as! String
+        color = color == "white" ? "black" : "white"
+        print(color)
+        
+        let gameID = format0["gameID"] as! String
+        print(gameID)
+        
+        if let topController = UIApplication.shared.keyWindow?.rootViewController {
+            if let presentedViewController = topController.presentedViewController {
+                if let presentedViewController0 = presentedViewController as? BoardViewController {
+                    presentedViewController0.cleanUp()
+                    if let rootVC = topController.presentingViewController as? ViewController {
+                        rootVC.dismiss(animated: true) {
+                            let mainStoryboard : UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+                            let initialViewController : BoardViewController = mainStoryboard.instantiateViewController(withIdentifier: "homeScreen") as! BoardViewController
+                            initialViewController.gameID = gameID
+                            initialViewController.color = color
+                            initialViewController.isHost = false
+                            self.window = UIWindow(frame: UIScreen.main.bounds)
+                            self.window?.rootViewController = initialViewController
+                            self.window?.makeKeyAndVisible()
+                            self.db?.collection("games").document(gameID).setData([
+                                "joined" : true
+                                ], merge: true)
+                        }
+                    }
+                }
+                
+            }
+            else {
+                let mainStoryboard : UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+                let initialViewController = mainStoryboard.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
+                initialViewController.gameID = gameID
+                initialViewController.color = color
+                initialViewController.isHost = false
+                self.window = UIWindow(frame: UIScreen.main.bounds)
+                self.window?.rootViewController = initialViewController
+                self.window?.makeKeyAndVisible()
+                self.db?.collection("games").document(gameID).setData([
+                    "joined" : true
+                    ], merge: true)
+            }
+        }
+        
+        completionHandler(UIBackgroundFetchResult.newData)
     }
 
 

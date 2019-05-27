@@ -29,6 +29,7 @@
 		4C336DD82278C069005F5F6C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4C336DDA2278C069005F5F6C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4C3E6534229C3FB50016052C /* 2017.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = 2017.mp3; sourceTree = "<group>"; };
+		4C3E6536229C688E0016052C /* Gammon Air.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Gammon Air.entitlements"; sourceTree = "<group>"; };
 		4C70DF8F2278F46B004C113E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4C70DF9122791AC5004C113E /* JoinTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinTableViewCell.swift; sourceTree = "<group>"; };
 		4C70DF93227924E8004C113E /* BoardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardViewController.swift; sourceTree = "<group>"; };
@@ -88,6 +89,7 @@
 		4C336DCD2278C067005F5F6C /* Gammon Air */ = {
 			isa = PBXGroup;
 			children = (
+				4C3E6536229C688E0016052C /* Gammon Air.entitlements */,
 				4C336DCE2278C067005F5F6C /* AppDelegate.swift */,
 				4C336DD02278C067005F5F6C /* ViewController.swift */,
 				4C70DF93227924E8004C113E /* BoardViewController.swift */,
@@ -137,6 +139,11 @@
 				TargetAttributes = {
 					4C336DCA2278C067005F5F6C = {
 						CreatedOnToolsVersion = 10.2.1;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -390,6 +397,7 @@
 			baseConfigurationReference = CE15D4B46D05BEC64F1B79FB /* Pods-Gammon Air.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "Gammon Air/Gammon Air.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = UX7GPB828A;
 				INFOPLIST_FILE = "Gammon Air/Info.plist";
@@ -409,6 +417,7 @@
 			baseConfigurationReference = 90319DB8BD300CD9D4051E66 /* Pods-Gammon Air.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "Gammon Air/Gammon Air.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = UX7GPB828A;
 				INFOPLIST_FILE = "Gammon Air/Info.plist";

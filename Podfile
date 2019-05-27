@@ -7,6 +7,7 @@ target 'Gammon Air' do
 pod 'Firebase/Core'
 	pod 'Firebase/Auth'
 	pod 'Firebase/Firestore'
+	pod 'Firebase/Messaging'
   # Pods for Gammon Air
 
 end

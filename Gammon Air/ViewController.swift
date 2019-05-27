@@ -15,7 +15,7 @@ protocol HomeScreenDelegate : class {
     // unused
 }
 
-class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource, BoardViewDelegate, CNContactPickerDelegate {
+class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource, BoardViewDelegate, CNContactPickerDelegate, MessagingDelegate {
     
     @IBOutlet var hostButton: UIVisualEffectView!
     
@@ -49,13 +49,26 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     
     @IBOutlet var joinReturnButton: UIImageView!
     
+    @IBOutlet var phoneEntryView: UIView!
+    
+    @IBOutlet var phoneEntryField: UITextField!
+    
+    @IBOutlet var inviteRedBox: UIImageView!
+    
+    @IBOutlet var inviteBlackBox: UIImageView!
+    
+    @IBOutlet var inviteChoiceView: UIView!
+    
+    
     var db : Firestore? = nil
     
     var uid = String()
     var gameID = String()
+    var token = String()
     var hostObserver : ListenerRegistration? = nil
     var joinObserver : ListenerRegistration? = nil
     
+    var targetPhone = String()
     var localIDs = [String]()
     var localNames = [String]()
     var shouldKill = false {
@@ -133,16 +146,26 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         joinReturnButton.addGestureRecognizer(joinReturnTap)
         joinReturnButton.isUserInteractionEnabled = true
         
+        let inviteRedTap = UITapGestureRecognizer(target: self, action: #selector(inviteRedTapped))
+        inviteRedBox.addGestureRecognizer(inviteRedTap)
+        inviteRedBox.isUserInteractionEnabled = true
+        
+        let inviteBlackTap = UITapGestureRecognizer(target: self, action: #selector(inviteBlackTapped))
+        inviteBlackBox.addGestureRecognizer(inviteBlackTap)
+        inviteBlackBox.isUserInteractionEnabled = true
+        
         hostNameField.delegate = self
         hostNameField.returnKeyType = .done
         
         joinTable.delegate = self
         joinTable.dataSource = self
         
+        phoneEntryField.delegate = self
+        phoneEntryField.returnKeyType = .done
+        
         Auth.auth().signInAnonymously { (result, error) in
             if let data = result {
                 self.uid = data.user.uid
-                //self.checkForPreviousGame()
                 self.setupJoinObserver()
             }
             else {
@@ -155,29 +178,118 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         let db = Firestore.firestore()
         db.settings = settings
         
+        Messaging.messaging().delegate = self
+        InstanceID.instanceID().instanceID { (result, error) in
+            if let error = error {
+                print("Error fetching remote instance ID: \(error)")
+            } else if let result = result {
+                print("Remote instance ID token: \(result.token)")
+                self.token = result.token
+            }
+        }
+    }
+    
+    @objc func inviteRedTapped() {
+        inviteWithColor(color: "white")
+    }
+    
+    @objc func inviteBlackTapped() {
+        inviteWithColor(color: "black")
+    }
+    
+    func inviteWithColor( color: String ) {
+        
+        self.hostWaitingScreen.isHidden = false
+        UIView.animate(withDuration: 1, animations: {
+            self.hostWaitingScreen.alpha = 1
+        }) { (val) in
+            
+        }
+        var ref : DocumentReference? = nil
+        ref = db?.collection("games").addDocument(data: [
+            "open" : false,
+            "joined" : false,
+            "hostColor" : color,
+            "name" : hostNameField.text!
+        ]) { (val) in
+            self.gameID = ref!.documentID
+            
+            self.db?.collection("gameInvites").document().setData([
+                "toPhone" : self.targetPhone,
+                "hostColor" : color,
+                "from" : UIDevice.current.name,
+                "gameID" : self.gameID
+                ], merge: true)
+            
+            self.hostObserver = self.db?.collection("games").document(self.gameID).addSnapshotListener({ (snapshot, error) in
+                if snapshot?.data()?["joined"] as? Bool != nil && snapshot?.data()?["joined"] as! Bool == false {
+                    return
+                }
+                let vc = self.storyboard?.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
+                vc.gameID = self.gameID
+                vc.color = color
+                vc.isHost = true
+                self.present(vc, animated: true, completion: nil)
+                self.setJoinedGame(color: color)
+                self.shouldKill = true
+            })
+        }
+        
+        
+        
+        UIView.animate(withDuration: 0.7, animations: {
+            self.inviteChoiceView.alpha = 0
+        }) { (val) in
+            self.inviteChoiceView.isHidden = true
+        }
     }
     
     @objc func compTapped() {
+        db?.collection("users").document(self.uid).getDocument(completion: { (snapshot, error) in
+            if let phone = snapshot?.data()?["phone"] as? String {
+                self.showContacts()
+            }
+            else {
+                self.phoneEntryView.isHidden = false
+                UIView.animate(withDuration: 0.7, animations: {
+                    self.phoneEntryView.alpha = 1
+                }, completion: { (val) in
+                    
+                })
+            }
+        })
+    }
+    
+    func showContacts() {
         let contactPicker = CNContactPickerViewController()
         contactPicker.delegate = self
         self.present(contactPicker, animated: true, completion: nil)
     }
     
     func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
-        print("contact name: \(contact.givenName)")
+        if contact.phoneNumbers.count == 0 {
+            return
+        }
+        var phoneFormat = (contact.phoneNumbers.first?.value)!.stringValue
+        phoneFormat = phoneFormat.replacingOccurrences(of: " ", with: "")
+        phoneFormat = phoneFormat.replacingOccurrences(of: "+", with: "")
+        phoneFormat = phoneFormat.replacingOccurrences(of: "-", with: "")
+        phoneFormat = phoneFormat.replacingOccurrences(of: "(", with: "")
+        phoneFormat = phoneFormat.replacingOccurrences(of: ")", with: "")
+        if phoneFormat.first! == "1" || phoneFormat.first! == "0" {
+            phoneFormat.removeFirst()
+        }
+        print("contact phone: \(phoneFormat)")
+        targetPhone = phoneFormat
         
-        let url = URL(string: "https://us-central1-gammon-air.cloudfunctions.net/sendPush")!
-        var request = URLRequest(url:url)
-        request.httpBody = "Café".data(using: .utf8)
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let task = session.dataTask(with: request, completionHandler: {data, response, error -> Void in
-            
-        })
-        task.resume()
+        self.inviteChoiceView.isHidden = false
+        UIView.animate(withDuration: 0.7) {
+            self.inviteChoiceView.alpha = 1
+        }
     }
     
     func checkForPreviousGame() {
-        db?.collection("activeGames").document(self.uid).getDocument(completion: { (snapshot, error) in
+        db?.collection("users").document(self.uid).getDocument(completion: { (snapshot, error) in
             if let gameID = snapshot?.data()?["game"] as? String {
                 self.db?.collection("games").document(gameID).getDocument(completion: { (gameSnap, gameError) in
                     if gameSnap?.data()?["turn"] as? String != nil {
@@ -190,12 +302,12 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                         return
                     }
                     else {
-                        //self.db?.collection("activeGames").document(self.uid).delete()
+                        //self.db?.collection("users").document(self.uid).delete()
                     }
                 })
             }
             else {
-                //self.db?.collection("activeGames").document(self.uid).delete()
+                //self.db?.collection("users").document(self.uid).delete()
             }
         })
     }
@@ -205,11 +317,10 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     }
     
     func setJoinedGame(color : String) {
-        db?.collection("activeGames").document(self.uid).setData(["game": self.gameID, "color": color])
+        db?.collection("users").document(self.uid).setData(["game": self.gameID, "color": color], merge: true)
     }
     
     func hostGame (color: String) {
-        self.hostWaitingScreen.isHidden = false
         menuVertPan.constant = 0
         UIView.animate(withDuration: 0.3, delay: 0, options: [.curveLinear], animations: {
             self.view.layoutIfNeeded()
@@ -217,6 +328,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             print("k")
         }
         hostNameField.resignFirstResponder()
+        self.hostWaitingScreen.isHidden = false
         UIView.animate(withDuration: 1, animations: {
             self.hostWaitingScreen.alpha = 1
         }) { (val) in
@@ -325,6 +437,30 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             }
             hostNameField.resignFirstResponder()
         }
+        else if textField == phoneEntryField {
+            if let text = textField.text?.replacingOccurrences(of: " ", with: "") {
+                if text.count != 10 || text.contains(where: {!$0.isNumber}) {
+                    return false
+                }
+                else {
+                    db?.collection("users").document(self.uid).setData(["phone" : text], merge: true)
+                    db?.collection("tokens").document(text).setData(["token" : self.token], merge: true)
+                    UIView.animate(withDuration: 0.7, animations: {
+                        self.phoneEntryView.alpha = 0
+                    }) { (val) in
+                        self.phoneEntryView.isHidden = true
+                        
+                    }
+                    textField.resignFirstResponder()
+                    self.showContacts()
+                    return true
+                }
+            }
+            else {
+                return false
+            }
+        }
+        textField.resignFirstResponder()
         return true
     }
 
