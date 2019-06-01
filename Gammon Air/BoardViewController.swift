@@ -100,6 +100,9 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     
     @IBOutlet var undoButton: UIImageView!
     
+    @IBOutlet var notificationView0: NotificationView!
+    
+    @IBOutlet var notiBottom: NSLayoutConstraint!
     
     var mainScene : SCNScene!
     var cameraNode: SCNNode!
@@ -112,31 +115,11 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print("you are \(color)")
-        for _ in 1..<25 {
-            boardArray.append([])
-        }
-        
         position.append(contentsOf: position.reversed())
-        
-        setupScene()
-        
-        for view in [topInfoBar, turnBox, colorBox] {
-            view?.layer.cornerRadius = 10
-            view?.clipsToBounds = true
+        for view in [topInfoBar, turnBox, colorBox, undoButton, returnButton] {
+            view?.clipRound(10)
         }
-        colorBox.backgroundColor = color == "white" ? #colorLiteral(red: 0.9689499736, green: 0.969111979, blue: 0.9689287543, alpha: 1) : #colorLiteral(red: 0.2550163865, green: 0.2550654411, blue: 0.2550099492, alpha: 1)
-        
-        myDice = color == "white" ? "dice0" : "dice1"
-        notMyDice = color != "white" ? "dice0" : "dice1"
-        
-        notMyColor = color == "white" ? "black" : "white"
-        
-        debugLabel.text = myDice + " " + color + " "
-        
         db = Firestore.firestore()
-        
-        initialRoll()
         
         let tap = UILongPressGestureRecognizer(target: self, action: #selector(handleTap(rec:)))
         tap.minimumPressDuration = 0.1
@@ -151,10 +134,35 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
         undoButton.addGestureRecognizer(undoTap)
         undoButton.isUserInteractionEnabled = true
         
-        undoButton.layer.cornerRadius = 10.0
-        undoButton.clipsToBounds = true
-        returnButton.layer.cornerRadius = 10.0
-        returnButton.clipsToBounds = true
+        let notiAcceptTap = UITapGestureRecognizer(target: self, action: #selector(notiAcceptTapped))
+        notificationView0.acceptButton.addGestureRecognizer(notiAcceptTap)
+        notificationView0.acceptButton.isUserInteractionEnabled = true
+        
+        let notiDeclineTap = UITapGestureRecognizer(target: self, action: #selector(notiDeclineTapped))
+        notificationView0.declineButton.addGestureRecognizer(notiDeclineTap)
+        notificationView0.declineButton.isUserInteractionEnabled = true
+        
+        setupGame()
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationWillTerminate),
+                                               name: UIApplication.willTerminateNotification,
+                                               object: nil)
+    }
+    
+    func setupGame() {
+        print("you are \(color)")
+        boardArray.removeAll()
+        for _ in 1..<25 {
+            boardArray.append([])
+        }
+        setupScene()
+        colorBox.backgroundColor = color == "white" ? #colorLiteral(red: 0.9689499736, green: 0.969111979, blue: 0.9689287543, alpha: 1) : #colorLiteral(red: 0.2550163865, green: 0.2550654411, blue: 0.2550099492, alpha: 1)
+        myDice = color == "white" ? "dice0" : "dice1"
+        notMyDice = color != "white" ? "dice0" : "dice1"
+        notMyColor = color == "white" ? "black" : "white"
+        
+        initialRoll()
         
         if (AVAudioSession.sharedInstance().secondaryAudioShouldBeSilencedHint) {
             print("another application with a non-mixable audio session is playing audio")
@@ -177,11 +185,52 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
                 print("Can't play the audio file failed with an error \(error.localizedDescription)")
             }
         }
-        
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(applicationWillTerminate),
-                                               name: UIApplication.willTerminateNotification,
-                                               object: nil)
+    }
+    
+    @objc func notiAcceptTapped() {
+        hideNotification()
+        let id = notificationView0.gameID
+        self.db?.collection("games").document(id).setData([
+            "joined" : true
+            ], merge: true)
+        self.db?.collection("games").document(id).getDocument(completion: { (snapshot, error) in
+            self.cleanUp()
+            self.gameID = id
+            if snapshot?.data()?["hostColor"] as! String == "white" {
+                self.color = "black"
+            }
+            else {
+                self.color = "white"
+            }
+            self.isHost = false
+            self.setupGame()
+        })
+    }
+    
+    @objc func notiDeclineTapped() {
+        hideNotification()
+        let id = notificationView0.gameID
+        self.db?.collection("games").document(id).setData([
+            "declined" : true
+            ], merge: true)
+    }
+    
+    func hideNotification() {
+        UIView.animate(withDuration: 0.7, animations: {
+            self.notiBottom.constant = 0
+            self.view.layoutIfNeeded()
+        }) { (val) in
+        }
+    }
+    
+    func showNotification(gameID: String, hostName: String, hostColor: String) {
+        UIView.animate(withDuration: 0.7, animations: {
+            self.notiBottom.constant = -150
+            self.notificationView0.gameID = gameID
+            self.notificationView0.titleLabel.text = "\(hostName) invited you to play Gammon!"
+            self.view.layoutIfNeeded()
+        }) { (val) in
+        }
     }
     
     func unmoveFromRailTo(index: Int) {
@@ -2308,14 +2357,16 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     }
     
     func cleanUp () {
-        for node in mainScene.rootNode.childNodes {
-            if node.geometry != nil {
-                node.geometry = nil
+        if mainScene != nil {
+            for node in mainScene.rootNode.childNodes {
+                if node.geometry != nil {
+                    node.geometry = nil
+                }
+                if node.physicsBody != nil {
+                    node.physicsBody = nil
+                }
+                node.removeFromParentNode()
             }
-            if node.physicsBody != nil {
-                node.physicsBody = nil
-            }
-            node.removeFromParentNode()
         }
         mainScene = nil
         if ref != nil {

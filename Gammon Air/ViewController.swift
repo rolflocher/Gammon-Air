@@ -59,6 +59,11 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     
     @IBOutlet var inviteChoiceView: UIView!
     
+    @IBOutlet var notificationBottom: NSLayoutConstraint!
+    
+    @IBOutlet var notificationView0: NotificationView!
+    
+    
     
     var db : Firestore? = nil
     
@@ -92,27 +97,22 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         
         db = Firestore.firestore()
         
-        let buttonRadius : CGFloat = 15.0
-        hostButton.layer.cornerRadius = buttonRadius
-        hostButton.clipsToBounds = true
-        joinButton.layer.cornerRadius = buttonRadius
-        joinButton.clipsToBounds = true
-        compButton.layer.cornerRadius = buttonRadius
-        compButton.clipsToBounds = true
-        
-        hostRedButton.layer.cornerRadius = 8.0
-        hostBlackButton.layer.cornerRadius = 8.0
-        hostRedButton.isUserInteractionEnabled = true
-        hostBlackButton.isUserInteractionEnabled = true
-        
         hostWaitingScreen.alpha = 0.0
         
-        hostMenu.layer.cornerRadius = buttonRadius
-        hostMenu.clipsToBounds = true
-        joinMenu.layer.cornerRadius = buttonRadius
-        joinMenu.clipsToBounds = true
-        joinTable.layer.cornerRadius = 8.0
-        joinTable.clipsToBounds = true
+        let buttonRadius : CGFloat = 15.0
+        hostButton.clipRound(buttonRadius)
+        joinButton.clipRound(buttonRadius)
+        compButton.clipRound(buttonRadius)
+        
+        hostRedButton.clipRound(8.0)
+        hostBlackButton.clipRound(8.0)
+        
+        inviteBlackBox.clipRound(10.0)
+        inviteRedBox.clipRound(10.0)
+        
+        hostMenu.clipRound(buttonRadius)
+        joinMenu.clipRound(buttonRadius)
+        joinTable.clipRound(8.0)
         
         let hostTap = UITapGestureRecognizer(target: self, action: #selector(hostTapped))
         hostButton.addGestureRecognizer(hostTap)
@@ -154,6 +154,14 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         inviteBlackBox.addGestureRecognizer(inviteBlackTap)
         inviteBlackBox.isUserInteractionEnabled = true
         
+        let notiAcceptTap = UITapGestureRecognizer(target: self, action: #selector(notiAcceptTapped))
+        notificationView0.acceptButton.addGestureRecognizer(notiAcceptTap)
+        notificationView0.acceptButton.isUserInteractionEnabled = true
+        
+        let notiDeclineTap = UITapGestureRecognizer(target: self, action: #selector(notiDeclineTapped))
+        notificationView0.declineButton.addGestureRecognizer(notiDeclineTap)
+        notificationView0.declineButton.isUserInteractionEnabled = true
+        
         hostNameField.delegate = self
         hostNameField.returnKeyType = .done
         
@@ -186,6 +194,59 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                 print("Remote instance ID token: \(result.token)")
                 self.token = result.token
             }
+        }
+    }
+    
+    @objc func notiAcceptTapped() {
+        hideNotification()
+        let id = notificationView0.gameID
+        self.db?.collection("games").document(id).setData([
+            "joined" : true
+            ], merge: true)
+        self.db?.collection("games").document(id).getDocument(completion: { (snapshot, error) in
+            self.joinObserver?.remove()
+            let vc = self.storyboard?.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
+            vc.gameID = id
+            if snapshot?.data()?["hostColor"] == nil {
+                self.joinTable.reloadData()
+                return
+            }
+            else if snapshot?.data()?["hostColor"] as! String == "white" {
+                vc.color = "black"
+            }
+            else {
+                vc.color = "white"
+            }
+            self.gameID = id
+            self.setJoinedGame(color: vc.color)
+            vc.isHost = false
+            self.present(vc, animated: true, completion: nil)
+        })
+    }
+    
+    @objc func notiDeclineTapped() {
+        hideNotification()
+        let id = notificationView0.gameID
+        self.db?.collection("games").document(id).setData([
+            "declined" : true
+            ], merge: true)
+    }
+    
+    func hideNotification() {
+        UIView.animate(withDuration: 0.7, animations: {
+            self.notificationBottom.constant = 0
+            self.view.layoutIfNeeded()
+        }) { (val) in
+        }
+    }
+    
+    func showNotification(gameID: String, hostName: String, hostColor: String) {
+        UIView.animate(withDuration: 0.7, animations: {
+            self.notificationBottom.constant = -150
+            self.notificationView0.gameID = gameID
+            self.notificationView0.titleLabel.text = "\(hostName) invited you to play Gammon!"
+            self.view.layoutIfNeeded()
+        }) { (val) in
         }
     }
     
@@ -222,6 +283,16 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                 ], merge: true)
             
             self.hostObserver = self.db?.collection("games").document(self.gameID).addSnapshotListener({ (snapshot, error) in
+                if snapshot?.data()?["declined"] as? Bool != nil && snapshot?.data()?["declined"] as! Bool == true {
+                    self.shouldKill = true
+                    UIView.animate(withDuration: 0.7, animations: {
+                        self.menuContainer.alpha = 1
+                        self.hostWaitingScreen.alpha = 0
+                    }, completion: { (val) in
+                        self.hostWaitingScreen.isHidden = true
+                    })
+                    return
+                }
                 if snapshot?.data()?["joined"] as? Bool != nil && snapshot?.data()?["joined"] as! Bool == false {
                     return
                 }
@@ -232,6 +303,9 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
                 self.present(vc, animated: true, completion: nil)
                 self.setJoinedGame(color: color)
                 self.shouldKill = true
+                UIView.animate(withDuration: 0.7) {
+                    self.menuContainer.alpha = 1
+                }
             })
         }
         
@@ -264,6 +338,10 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         let contactPicker = CNContactPickerViewController()
         contactPicker.delegate = self
         self.present(contactPicker, animated: true, completion: nil)
+        UIView.animate(withDuration: 0.7) {
+            self.menuContainer.alpha = 0
+        }
+        
     }
     
     func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
@@ -283,8 +361,17 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         targetPhone = phoneFormat
         
         self.inviteChoiceView.isHidden = false
-        UIView.animate(withDuration: 0.7) {
+        self.view.layoutIfNeeded()
+        print("alpha = \(inviteChoiceView.alpha)")
+        UIView.animate(withDuration: 1.5) {
             self.inviteChoiceView.alpha = 1
+            self.view.layoutIfNeeded()
+        }
+    }
+    
+    func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
+        UIView.animate(withDuration: 0.7) {
+            self.menuContainer.alpha = 1
         }
     }
     
@@ -412,7 +499,9 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         }
         self.hostObserver?.remove()
         db?.collection("games").document(gameID).delete()
-        
+        UIView.animate(withDuration: 0.7) {
+            self.menuContainer.alpha = 1
+        }
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {

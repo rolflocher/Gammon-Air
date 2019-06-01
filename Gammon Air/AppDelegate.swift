@@ -83,51 +83,43 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // With swizzling disabled you must let Messaging know about the message, for Analytics
         // Messaging.messaging().appDidReceiveMessage(userInfo)
         
-        // Print message ID.
         print("Info: \(userInfo)")
         let format0 = userInfo["aps"] as! [String:Any]
-        print(format0)
-        var color = format0["color"] as! String
-        color = color == "white" ? "black" : "white"
-        print(color)
         
+        let color = format0["color"] as! String
+        let myColor = color == "white" ? "black" : "white"
         let gameID = format0["gameID"] as! String
-        print(gameID)
+        let from = format0["from"] as! String
+        
+//        let state = UIApplication.shared.applicationState
+//        if state == .background  || state == .inactive{
+//            // background
+//        }else if state == .active {
+//            
+//        }
         
         if let topController = UIApplication.shared.keyWindow?.rootViewController {
             if let presentedViewController = topController.presentedViewController {
                 if let presentedViewController0 = presentedViewController as? BoardViewController {
-                    presentedViewController0.cleanUp()
-                    if let rootVC = topController.presentingViewController as? ViewController {
-                        rootVC.dismiss(animated: true) {
-                            let mainStoryboard : UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
-                            let initialViewController : BoardViewController = mainStoryboard.instantiateViewController(withIdentifier: "homeScreen") as! BoardViewController
-                            initialViewController.gameID = gameID
-                            initialViewController.color = color
-                            initialViewController.isHost = false
-                            self.window = UIWindow(frame: UIScreen.main.bounds)
-                            self.window?.rootViewController = initialViewController
-                            self.window?.makeKeyAndVisible()
-                            self.db?.collection("games").document(gameID).setData([
-                                "joined" : true
-                                ], merge: true)
-                        }
-                    }
+                    presentedViewController0.showNotification(gameID: gameID, hostName: from, hostColor: myColor)
                 }
                 
             }
             else {
-                let mainStoryboard : UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
-                let initialViewController = mainStoryboard.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
-                initialViewController.gameID = gameID
-                initialViewController.color = color
-                initialViewController.isHost = false
-                self.window = UIWindow(frame: UIScreen.main.bounds)
-                self.window?.rootViewController = initialViewController
-                self.window?.makeKeyAndVisible()
-                self.db?.collection("games").document(gameID).setData([
-                    "joined" : true
-                    ], merge: true)
+                if let homeController = topController as? ViewController {
+                    homeController.showNotification(gameID: gameID, hostName: from, hostColor: myColor)
+                }
+//                let mainStoryboard : UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+//                let initialViewController = mainStoryboard.instantiateViewController(withIdentifier: "gameController") as! BoardViewController
+//                initialViewController.gameID = gameID
+//                initialViewController.color = color
+//                initialViewController.isHost = false
+//                self.window = UIWindow(frame: UIScreen.main.bounds)
+//                self.window?.rootViewController = initialViewController
+//                self.window?.makeKeyAndVisible()
+//                self.db?.collection("games").document(gameID).setData([
+//                    "joined" : true
+//                    ], merge: true)
             }
         }
         
