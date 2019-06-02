@@ -47,18 +47,25 @@ class messageView: UIView {
             newWidth = (textSize?.width ?? 0)+30
         }
         else {
-            newWidth = 250
-            messageLabel.numberOfLines = Int(ceil(Double((textSize?.width ?? 0)/250)))
+            newWidth = 250+30
+            messageLabel.numberOfLines = Int(ceil((messageLabel.text?.height(withConstrainedWidth: 250, font: messageLabel.font!))!/25.5))
+            print(messageLabel.text?.height(withConstrainedWidth: 250, font: messageLabel.font!) ?? "")
+            //messageLabel.numberOfLines = Int(ceil(Double((textSize?.width ?? 0)/250)))
         }
         let frame = contentView.frame
+//        if sender == UIDevice.current.name {
+//            self.frame = CGRect(x: deviceWidth-20-newWidth, y: frame.minY, width: newWidth, height: CGFloat(messageLabel.numberOfLines)*25+20)
+//        }
+//        else {
+//            self.frame = CGRect(x: frame.minX, y: frame.minY, width: newWidth, height: CGFloat(messageLabel.numberOfLines)*25+20)
+//        }
+        height = CGFloat(messageLabel.numberOfLines)*25+20
         if sender == UIDevice.current.name {
-            self.frame = CGRect(x: deviceWidth-20-newWidth, y: frame.minY, width: newWidth, height: CGFloat(messageLabel.numberOfLines)*25+20)
+            self.frame = CGRect(x: deviceWidth-20-newWidth, y: frame.minY-height, width: newWidth, height: height)
         }
         else {
-            self.frame = CGRect(x: frame.minX, y: frame.minY, width: newWidth, height: CGFloat(messageLabel.numberOfLines)*25+20)
+            self.frame = CGRect(x: frame.minX, y: frame.minY-height, width: newWidth, height: height)
         }
-        
-        height = CGFloat(messageLabel.numberOfLines)*25+20
     }
 
 }

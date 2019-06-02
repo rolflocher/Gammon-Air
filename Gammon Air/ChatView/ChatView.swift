@@ -124,7 +124,7 @@ class ChatView: UIView, UITextFieldDelegate {
             let docInfo = snapshot!.documents[0].data()
             let sender = docInfo["sender"] as! String
             
-            let newMessageView = messageView(frame: CGRect(x: 20, y: 500, width: 20, height: 40))
+            let newMessageView = messageView(frame: CGRect(x: 20, y: 600, width: 20, height: 40))
             newMessageView.sender = sender
             newMessageView.content = docInfo["content"] as! String
             newMessageView.time = docInfo["time"] as! Int
@@ -138,8 +138,11 @@ class ChatView: UIView, UITextFieldDelegate {
     }
     
     func addMessageToBottom(view: messageView) {
+//        for mx in messageList {
+//            mx.frame = CGRect(x: mx.frame.minX, y: mx.frame.minY-messageList.last!.frame.height-2*vertMessagePadding, width: mx.frame.width, height: mx.frame.height)
+//        }
         for mx in messageList {
-            mx.frame = CGRect(x: mx.frame.minX, y: mx.frame.minY-messageList.last!.frame.height-2*vertMessagePadding, width: mx.frame.width, height: mx.frame.height)
+            mx.frame = CGRect(x: mx.frame.minX, y: mx.frame.minY-view.height-2*vertMessagePadding, width: mx.frame.width, height: mx.frame.height)
         }
         contentHeight += view.height+2*vertMessagePadding
         if contentHeight > conversationScrollView.frame.height-340 {
