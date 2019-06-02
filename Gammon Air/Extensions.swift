@@ -9,6 +9,11 @@
 import Foundation
 import UIKit
 
+struct cxParams {
+    var collection = String()
+    var document = String()
+}
+
 extension UIView
 {
    

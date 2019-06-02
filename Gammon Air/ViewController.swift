@@ -63,6 +63,10 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     
     @IBOutlet var notificationView0: NotificationView!
     
+    @IBOutlet var menuContainerWidth: NSLayoutConstraint!
+    
+    @IBOutlet var menuContainerContentsWidth: NSLayoutConstraint!
+    
     
     
     var db : Firestore? = nil
@@ -96,6 +100,10 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         super.viewDidLoad()
         
         db = Firestore.firestore()
+        
+        menuContainerWidth.constant = UIScreen.main.bounds.width*3
+        menuContainerContentsWidth.constant = UIScreen.main.bounds.width-109
+        menuPan.constant = -UIScreen.main.bounds.width
         
         hostWaitingScreen.alpha = 0.0
         
@@ -320,7 +328,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     
     @objc func compTapped() {
         db?.collection("users").document(self.uid).getDocument(completion: { (snapshot, error) in
-            if let phone = snapshot?.data()?["phone"] as? String {
+            if snapshot?.data()?["phone"] as? String != nil {
                 self.showContacts()
             }
             else {
@@ -554,14 +562,15 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     }
 
     @objc func hostTapped() {
-        self.menuPan.constant = 23
+        self.menuPan.constant = 0
+        
         UIView.animate(withDuration: 0.7) {
             self.view.layoutIfNeeded()
         }
     }
     
     @objc func joinTapped() {
-        self.menuPan.constant = -698
+        self.menuPan.constant = -UIScreen.main.bounds.width*2
         UIView.animate(withDuration: 0.7) {
             self.view.layoutIfNeeded()
         }
@@ -569,7 +578,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     
     @objc func joinReturnTapped() {
         UIView.animate(withDuration: 0.7, animations: {
-            self.menuPan.constant = -325
+            self.menuPan.constant = -UIScreen.main.bounds.width
             self.view.layoutIfNeeded()
         }) { (val) in
         }
@@ -585,7 +594,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
             }) { (val) in
                 
                 UIView.animate(withDuration: 0.7, animations: {
-                    self.menuPan.constant = -325
+                    self.menuPan.constant = -UIScreen.main.bounds.width
                     self.view.layoutIfNeeded()
                 }) { (val) in
                     self.hostNameField.text = ""
@@ -594,7 +603,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
         }
         else {
             UIView.animate(withDuration: 0.7, animations: {
-                self.menuPan.constant = -325
+                self.menuPan.constant = -UIScreen.main.bounds.width
                 self.view.layoutIfNeeded()
             }) { (val) in
                 self.hostNameField.text = ""

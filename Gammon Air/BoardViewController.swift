@@ -21,7 +21,11 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     
     var audioPlayer: AVAudioPlayer? = nil
     
-    var gameID = String()
+    var gameID = String() {
+        didSet {
+            
+        }
+    }
     var color = String()
     var notMyColor = String()
     var myDice = String()
@@ -76,7 +80,11 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     
     @IBOutlet var sceneView: SCNView!
     
-    @IBOutlet var returnButton: UIImageView!
+    @IBOutlet var returnButton: UIImageView! {
+        didSet{
+            print("return button set")
+        }
+    }
     
     @IBOutlet var debugLabel: UILabel!
     
@@ -104,6 +112,18 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     
     @IBOutlet var notiBottom: NSLayoutConstraint!
     
+    @IBOutlet var chatView0: ChatView!
+    
+    @IBOutlet var chatViewLeft: NSLayoutConstraint!
+    
+    @IBOutlet var chatInfoLabel: UILabel!
+    
+    @IBOutlet var chatArrowImageView: UIImageView!
+    
+    @IBOutlet var chatSwipeView: UIView!
+    
+    @IBOutlet var chatViewWidth: NSLayoutConstraint!
+    
     var mainScene : SCNScene!
     var cameraNode: SCNNode!
     
@@ -120,6 +140,12 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
             view?.clipRound(10)
         }
         db = Firestore.firestore()
+        
+        chatViewWidth.constant = UIScreen.main.bounds.width
+        
+        let chatTap = UITapGestureRecognizer(target: self, action: #selector(chatTapped))
+        chatSwipeView.addGestureRecognizer(chatTap)
+        chatSwipeView.isUserInteractionEnabled = true
         
         let tap = UILongPressGestureRecognizer(target: self, action: #selector(handleTap(rec:)))
         tap.minimumPressDuration = 0.1
@@ -142,6 +168,10 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
         notificationView0.declineButton.addGestureRecognizer(notiDeclineTap)
         notificationView0.declineButton.isUserInteractionEnabled = true
         
+        let chatReturnTap = UISwipeGestureRecognizer(target: self, action: #selector(chatReturnTapped))
+        chatView0.addGestureRecognizer(chatReturnTap)
+        chatView0.isUserInteractionEnabled = true
+        
         setupGame()
         
         NotificationCenter.default.addObserver(self,
@@ -150,12 +180,35 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
                                                object: nil)
     }
     
+    @objc func chatReturnTapped(gesture: UIGestureRecognizer) {
+        if let swipeGesture = gesture as? UISwipeGestureRecognizer {
+            if swipeGesture.direction == .right {
+                chatViewLeft.constant = 0
+                UIView.animate(withDuration: 0.4, animations: {
+                    self.view.layoutIfNeeded()
+                }) { (val) in
+                }
+            }
+        }
+    }
+    
+    @objc func chatTapped() {
+        chatView0.connectionParams = cxParams(collection: "messages", document: gameID)
+        chatViewLeft.constant = -UIScreen.main.bounds.width
+        UIView.animate(withDuration: 0.7, animations: {
+            self.view.layoutIfNeeded()
+        }) { (val) in
+            //print(self.chatView0.frame)
+        }
+    }
+    
     func setupGame() {
         print("you are \(color)")
         boardArray.removeAll()
         for _ in 1..<25 {
             boardArray.append([])
         }
+        
         setupScene()
         colorBox.backgroundColor = color == "white" ? #colorLiteral(red: 0.9689499736, green: 0.969111979, blue: 0.9689287543, alpha: 1) : #colorLiteral(red: 0.2550163865, green: 0.2550654411, blue: 0.2550099492, alpha: 1)
         myDice = color == "white" ? "dice0" : "dice1"
@@ -1749,7 +1802,7 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
         }
         
         else if !hits.isEmpty{
-            if let tappedNode = hits.first?.node {
+            if hits.first?.node != nil {
                 let zPos = hits.last!.worldCoordinates.z//tappedNode.position.z
                 let xPos = hits.last!.worldCoordinates.x//tappedNode.position.x
                 

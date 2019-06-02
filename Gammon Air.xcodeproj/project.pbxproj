@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4C33652C22A30DF000DE83E9 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C33652B22A30DF000DE83E9 /* ChatView.swift */; };
+		4C33652E22A30E0200DE83E9 /* ChatView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C33652D22A30E0200DE83E9 /* ChatView.xib */; };
+		4C33653322A3156000DE83E9 /* MessageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C33653222A3156000DE83E9 /* MessageView.xib */; };
+		4C33653522A315A800DE83E9 /* messageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C33653422A315A800DE83E9 /* messageView.swift */; };
 		4C336DCF2278C067005F5F6C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C336DCE2278C067005F5F6C /* AppDelegate.swift */; };
 		4C336DD12278C067005F5F6C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C336DD02278C067005F5F6C /* ViewController.swift */; };
 		4C336DD42278C067005F5F6C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C336DD22278C067005F5F6C /* Main.storyboard */; };
@@ -24,6 +28,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4C33652B22A30DF000DE83E9 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		4C33652D22A30E0200DE83E9 /* ChatView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ChatView.xib; sourceTree = "<group>"; };
+		4C33653222A3156000DE83E9 /* MessageView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MessageView.xib; sourceTree = "<group>"; };
+		4C33653422A315A800DE83E9 /* messageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = messageView.swift; sourceTree = "<group>"; };
 		4C336DCB2278C067005F5F6C /* Gammon Air.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gammon Air.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C336DCE2278C067005F5F6C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4C336DD02278C067005F5F6C /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -74,6 +82,17 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		4C33652F22A30E0A00DE83E9 /* ChatView */ = {
+			isa = PBXGroup;
+			children = (
+				4C33653422A315A800DE83E9 /* messageView.swift */,
+				4C33653222A3156000DE83E9 /* MessageView.xib */,
+				4C33652B22A30DF000DE83E9 /* ChatView.swift */,
+				4C33652D22A30E0200DE83E9 /* ChatView.xib */,
+			);
+			path = ChatView;
+			sourceTree = "<group>";
+		};
 		4C336DC22278C067005F5F6C = {
 			isa = PBXGroup;
 			children = (
@@ -97,6 +116,7 @@
 			children = (
 				4C3E6536229C688E0016052C /* Gammon Air.entitlements */,
 				4C336DCE2278C067005F5F6C /* AppDelegate.swift */,
+				4C33652F22A30E0A00DE83E9 /* ChatView */,
 				4C336DD02278C067005F5F6C /* ViewController.swift */,
 				4C70DF93227924E8004C113E /* BoardViewController.swift */,
 				4C7CD7C4227CDB6C00FC06C4 /* scnModels.scnassets */,
@@ -179,8 +199,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C33652E22A30E0200DE83E9 /* ChatView.xib in Resources */,
 				4C3E6535229C3FB50016052C /* 2017.mp3 in Resources */,
 				4C3E653A229CC2F00016052C /* NotificationView.xib in Resources */,
+				4C33653322A3156000DE83E9 /* MessageView.xib in Resources */,
 				4C336DD92278C069005F5F6C /* LaunchScreen.storyboard in Resources */,
 				4C70DF902278F46B004C113E /* GoogleService-Info.plist in Resources */,
 				4C336DD62278C069005F5F6C /* Assets.xcassets in Resources */,
@@ -261,6 +283,8 @@
 				4C70DF9222791AC5004C113E /* JoinTableViewCell.swift in Sources */,
 				4C3E653C229DF84D0016052C /* Extensions.swift in Sources */,
 				4C336DCF2278C067005F5F6C /* AppDelegate.swift in Sources */,
+				4C33653522A315A800DE83E9 /* messageView.swift in Sources */,
+				4C33652C22A30DF000DE83E9 /* ChatView.swift in Sources */,
 				4C70DF94227924E8004C113E /* BoardViewController.swift in Sources */,
 				4C3E6538229CC2D60016052C /* NotificationView.swift in Sources */,
 			);
