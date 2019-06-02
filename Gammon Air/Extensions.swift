@@ -14,9 +14,63 @@ struct cxParams {
     var document = String()
 }
 
+extension NSLayoutConstraint {
+    func animateConstantTo(_ constant: CGFloat, withDuration dur: TimeInterval, layoutUpdate: @escaping()->Void, completion: @escaping()->Void) {
+        self.constant = constant
+        UIView.animate(withDuration: dur, animations: {
+            layoutUpdate()
+        }) { (val) in
+            completion()
+        }
+    }
+    func animateConstantForeverBetween(_ start: CGFloat, _ end: CGFloat, withDuration dur: TimeInterval, layoutUpdate: @escaping()->Void) {
+        self.animateConstantTo(start, withDuration: dur, layoutUpdate: layoutUpdate) {
+            self.animateConstantForeverBetween(end, start, withDuration: dur, layoutUpdate: layoutUpdate)
+        }
+    }
+}
+
+extension UIImageView {
+    func glimmer(dir: Bool) {
+        if dir {
+            UIView.animate(withDuration: 1.4, animations: {
+                self.alpha = 0.75
+            }) { (val) in
+                self.glimmer(dir: false)
+            }
+        }
+        else {
+            UIView.animate(withDuration: 1.4, animations: {
+                self.alpha = 0
+            }) { (val) in
+                self.glimmer(dir: true)
+            }
+        }
+    }
+    
+}
+
+extension UILabel {
+    func glimmer(dir: Bool) {
+        if dir {
+            UIView.animate(withDuration: 1.4, animations: {
+                self.alpha = 0.75
+            }) { (val) in
+                self.glimmer(dir: false)
+            }
+        }
+        else {
+            UIView.animate(withDuration: 1.4, animations: {
+                self.alpha = 0
+            }) { (val) in
+                self.glimmer(dir: true)
+            }
+        }
+    }
+}
+
 extension UIView
 {
-   
     func clipRound(_ radius : CGFloat) {
         self.layer.cornerRadius = radius
         self.clipsToBounds = true

@@ -453,7 +453,7 @@ class ViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate
     }
     
     func setupJoinObserver() {
-        self.joinObserver = db?.collection("games").addSnapshotListener({ (snapshot, error) in
+        self.joinObserver = db?.collection("games").whereField("open", isEqualTo: true).addSnapshotListener({ (snapshot, error) in
             if snapshot?.count == 0 {
                 return
             }

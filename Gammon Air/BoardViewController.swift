@@ -15,7 +15,7 @@ protocol BoardViewDelegate : class {
     func dismissBoard()
 }
 
-class BoardViewController: UIViewController, AVAudioPlayerDelegate {
+class BoardViewController: UIViewController, AVAudioPlayerDelegate, UIGestureRecognizerDelegate {
 
     weak var boardViewDelegate0 : BoardViewDelegate?
     
@@ -45,6 +45,8 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     var settingRoll = false
     var usedMoves = [[Int]]()
     var takenPieceBuffer = [Bool]()
+    var scenePressGesture : UILongPressGestureRecognizer? = nil
+    var sceneSwipeGesture: UISwipeGestureRecognizer? = nil
     var canUndo = false {
         didSet {
             if self.canUndo == true {
@@ -124,6 +126,10 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     
     @IBOutlet var chatViewWidth: NSLayoutConstraint!
     
+    @IBOutlet var chatArrowWidth: NSLayoutConstraint!
+    
+    @IBOutlet var chatArrowCenterX: NSLayoutConstraint!
+    
     var mainScene : SCNScene!
     var cameraNode: SCNNode!
     
@@ -135,6 +141,12 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        chatInfoLabel.glimmer(dir: false)
+        chatArrowImageView.glimmer(dir: false)
+        chatArrowCenterX.animateConstantForeverBetween(0, 2, withDuration: 1.4) {
+            self.view.layoutIfNeeded()
+        }
+        
         position.append(contentsOf: position.reversed())
         for view in [topInfoBar, turnBox, colorBox, undoButton, returnButton] {
             view?.clipRound(10)
@@ -142,14 +154,21 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
         db = Firestore.firestore()
         
         chatViewWidth.constant = UIScreen.main.bounds.width
+        chatArrowWidth.constant = UIScreen.main.bounds.width/22
         
         let chatTap = UITapGestureRecognizer(target: self, action: #selector(chatTapped))
         chatSwipeView.addGestureRecognizer(chatTap)
         chatSwipeView.isUserInteractionEnabled = true
         
-        let tap = UILongPressGestureRecognizer(target: self, action: #selector(handleTap(rec:)))
-        tap.minimumPressDuration = 0.1
-        sceneView.addGestureRecognizer(tap)
+        sceneSwipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(chatSwiped))
+        sceneSwipeGesture?.delegate = self
+        sceneSwipeGesture?.direction = .left
+        sceneView.addGestureRecognizer(sceneSwipeGesture!)
+        
+        scenePressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleTap(rec:)))
+        scenePressGesture?.minimumPressDuration = 0.1
+        scenePressGesture?.delegate = self
+        sceneView.addGestureRecognizer(scenePressGesture!)
         sceneView.isUserInteractionEnabled = true
         
         let returnTap = UITapGestureRecognizer(target: self, action: #selector(returnTapped))
@@ -180,6 +199,10 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
                                                object: nil)
     }
     
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+    
     @objc func chatReturnTapped(gesture: UIGestureRecognizer) {
         if let swipeGesture = gesture as? UISwipeGestureRecognizer {
             if swipeGesture.direction == .right {
@@ -188,6 +211,17 @@ class BoardViewController: UIViewController, AVAudioPlayerDelegate {
                     self.view.layoutIfNeeded()
                 }) { (val) in
                 }
+            }
+        }
+    }
+    
+    @objc func chatSwiped(gesture: UISwipeGestureRecognizer) {
+        chatView0.connectionParams = cxParams(collection: "messages", document: gameID)
+        if gesture.direction == .left {
+            chatViewLeft.constant = -UIScreen.main.bounds.width
+            UIView.animate(withDuration: 0.5, animations: {
+                self.view.layoutIfNeeded()
+            }) { (val) in
             }
         }
     }

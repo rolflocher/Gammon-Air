@@ -77,6 +77,9 @@ class ChatView: UIView, UITextFieldDelegate {
     }
     
     @objc func sendTapped () {
+        if connectionParams == nil {
+            return
+        }
         db?.collection(connectionParams!.collection).document(connectionParams!.document).collection("messagesArchive").document().setData([
             "content": self.messageField.text ?? "issue 0",
             "time": Int(Date().timeIntervalSince1970),
@@ -99,6 +102,13 @@ class ChatView: UIView, UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let format = messageField.text as NSString?
         messageField.text = format?.replacingCharacters(in: range, with: string)
+        let textSize = messageField.text?.size(withAttributes: [NSAttributedString.Key.font:messageField.font!])
+        if textSize?.width ?? 0 < messageField.frame.width {
+            messageField.lineBreakMode = .byTruncatingTail
+        }
+        else {
+            messageField.lineBreakMode = .byTruncatingHead
+        }
         return true
     }
     
@@ -131,7 +141,12 @@ class ChatView: UIView, UITextFieldDelegate {
         for mx in messageList {
             mx.frame = CGRect(x: mx.frame.minX, y: mx.frame.minY-messageList.last!.frame.height-2*vertMessagePadding, width: mx.frame.width, height: mx.frame.height)
         }
-        contentHeight += view.height
+        contentHeight += view.height+2*vertMessagePadding
+        if contentHeight > conversationScrollView.frame.height-340 {
+            //conversationScrollView.contentMode = .center
+            //conversationScrollView.contentSize.height = contentHeight
+            //conversationScrollView.contentInset = UIEdgeInsets(top: contentHeight/2, left: 0, bottom: 0, right: 0)
+        }
         self.messageList.append(view)
         self.conversationScrollView.addSubview(view)
     }
